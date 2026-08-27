@@ -10,9 +10,11 @@
     "db:migrate": "tsx src/scripts/migrate.ts",
     "db:seed-admin": "tsx src/scripts/seed-admin.ts",
     "db:seed-football": "tsx src/scripts/seed-football.ts",
-    "db:seed-recruitment": "tsx src/scripts/seed-recruitment.ts"
+    "db:seed-recruitment": "tsx src/scripts/seed-recruitment.ts",
+    "rebuild-vectors": "tsx src/scripts/rebuild-vectors.ts"
   },
   "dependencies": {
+    "@qdrant/js-client-rest": "^1.18.0",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.10",
     "mysql2": "^3.24.2",

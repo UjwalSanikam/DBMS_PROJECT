@@ -1,0 +1,1282 @@
+=== src/app/api/admin/users/route.ts ===
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { query } from "@/lib/db";
+import { hashPassword } from "@/lib/auth";
+import { requireSession } from "@/lib/session";
+
+interface UserRow {
+  user_id: number;
+  full_name: string;
+  email: string;
+  role: "ADMIN" | "SCOUT";
+  created_at: string;
+}
+
+export async function GET() {
+  try {
+    await requireSession(["ADMIN"]);
+  } catch (err) {
+    return unauthorizedResponse(err);
+  }
+
+  const users = await query<UserRow[]>(
+    `SELECT user_id, full_name, email, role, created_at
+     FROM \`user\` ORDER BY created_at DESC`
+  );
+
+  return NextResponse.json({ users });
+}
+
+const createUserSchema = z.object({
+  fullName: z.string().min(1).max(120),
+  email: z.string().email(),
+  password: z.string().min(8, "Password must be at least 8 characters."),
+  role: z.enum(["ADMIN", "SCOUT"]),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    await requireSession(["ADMIN"]);
+  } catch (err) {
+    return unauthorizedResponse(err);
+  }
+
+  const body = await request.json().catch(() => null);
+  const parsed = createUserSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid input." },
+      { status: 400 }
+    );
+  }
+
+  const { fullName, email, password, role } = parsed.data;
+
+  try {
+    const passwordHash = await hashPassword(password);
+    const result = await query<{ insertId: number }>(
+      `INSERT INTO \`user\` (full_name, email, password_hash, role)
+       VALUES (?, ?, ?, ?)`,
+      [fullName, email, passwordHash, role]
+    );
+    return NextResponse.json(
+      { user: { id: result.insertId, fullName, email, role } },
+      { status: 201 }
+    );
+  } catch (err: unknown) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      (err as { code?: string }).code === "ER_DUP_ENTRY"
+    ) {
+      return NextResponse.json(
+        { error: "A user with that email already exists." },
+        { status: 409 }
+      );
+    }
+    console.error("Failed to create user:", err);
+    return NextResponse.json(
+      { error: "Could not create the user." },
+      { status: 500 }
+    );
+  }
+}
+
+function unauthorizedResponse(err: unknown) {
+  const message = err instanceof Error ? err.message : "UNAUTHENTICATED";
+  if (message === "FORBIDDEN") {
+    return NextResponse.json(
+      { error: "Admin privileges required." },
+      { status: 403 }
+    );
+  }
+  return NextResponse.json(
+    { error: "Authentication required." },
+    { status: 401 }
+  );
+}
+
+=== src/app/api/auth/login/route.ts ===
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { query } from "@/lib/db";
+import { createSessionToken, verifyPassword } from "@/lib/auth";
+import { setSessionCookie } from "@/lib/session";
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+interface UserRow {
+  user_id: number;
+  full_name: string;
+  email: string;
+  password_hash: string;
+  role: "ADMIN" | "SCOUT";
+}
+
+export async function POST(request: NextRequest) {
+  const body = await request.json().catch(() => null);
+  const parsed = loginSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Enter a valid email and password." },
+      { status: 400 }
+    );
+  }
+
+  const { email, password } = parsed.data;
+
+  const rows = await query<UserRow[]>(
+    `SELECT user_id, full_name, email, password_hash, role
+     FROM \`user\` WHERE email = ? LIMIT 1`,
+    [email]
+  );
+
+  const user = rows[0];
+
+  // Same generic error whether the email is unknown or the password is
+  // wrong — never reveal which one failed.
+  if (!user || !(await verifyPassword(password, user.password_hash))) {
+    return NextResponse.json(
+      { error: "Invalid email or password." },
+      { status: 401 }
+    );
+  }
+
+  const token = await createSessionToken({
+    userId: user.user_id,
+    email: user.email,
+    fullName: user.full_name,
+    role: user.role,
+  });
+
+  await setSessionCookie(token);
+
+  return NextResponse.json({
+    user: {
+      id: user.user_id,
+      fullName: user.full_name,
+      email: user.email,
+      role: user.role,
+    },
+  });
+}
+
+=== src/app/api/auth/logout/route.ts ===
+import { NextResponse } from "next/server";
+import { clearSessionCookie } from "@/lib/session";
+
+export async function POST() {
+  await clearSessionCookie();
+  return NextResponse.json({ ok: true });
+}
+
+=== src/app/api/auth/me/route.ts ===
+import { NextResponse } from "next/server";
+import { getSession } from "@/lib/session";
+
+export async function GET() {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ user: null }, { status: 200 });
+  }
+  return NextResponse.json({
+    user: {
+      id: session.userId,
+      fullName: session.fullName,
+      email: session.email,
+      role: session.role,
+    },
+  });
+}
+
+=== src/app/api/players/[id]/contracts/route.ts ===
+import { NextRequest, NextResponse } from "next/server";
+import { query } from "@/lib/db";
+import type { ResultSetHeader } from "mysql2";
+import { requireSession } from "@/lib/session";
+
+interface ContractRow {
+  contract_id: number;
+  player_id: number;
+  club_id: number;
+  start_date: string;
+  end_date: string;
+  weekly_salary: string | null;
+  release_clause: string | null;
+  currency: string;
+  contract_status: string;
+}
+
+function authErrorResponse(err: unknown): NextResponse {
+  if (err instanceof Error && err.message === "FORBIDDEN") {
+    return NextResponse.json({ error: "Admin privileges required." }, { status: 403 });
+  }
+  return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+}
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireSession();
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const { id } = await params;
+  const playerId = Number(id);
+  if (!Number.isInteger(playerId)) {
+    return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
+  }
+
+  const contracts = await query<ContractRow[]>(
+    `SELECT contract_id, player_id, club_id, start_date, end_date,
+            weekly_salary, release_clause, currency, contract_status
+     FROM contract
+     WHERE player_id = ?
+     ORDER BY start_date DESC`,
+    [playerId]
+  );
+
+  return NextResponse.json({ contracts });
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireSession(["ADMIN"]);
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const { id } = await params;
+  const playerId = Number(id);
+  if (!Number.isInteger(playerId)) {
+    return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
+  }
+
+  const body = await request.json();
+  const {
+    club_id,
+    start_date,
+    end_date,
+    weekly_salary,
+    release_clause,
+    currency,
+    contract_status,
+  } = body;
+
+  if (!club_id || !start_date || !end_date) {
+    return NextResponse.json(
+      { error: "club_id, start_date, and end_date are required." },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const result = await query<ResultSetHeader>(
+      `INSERT INTO contract
+         (player_id, club_id, start_date, end_date, weekly_salary,
+          release_clause, currency, contract_status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        playerId,
+        club_id,
+        start_date,
+        end_date,
+        weekly_salary ?? null,
+        release_clause ?? null,
+        currency ?? "EUR",
+        contract_status ?? "ACTIVE",
+      ]
+    );
+    return NextResponse.json({ contract_id: result.insertId }, { status: 201 });
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    const message = err instanceof Error ? err.message : "Failed to create contract.";
+    if (code === "ER_SIGNAL_EXCEPTION") {
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Failed to create contract." }, { status: 500 });
+  }
+}
+
+=== src/app/api/players/[id]/injuries/route.ts ===
+import { NextRequest, NextResponse } from "next/server";
+import { query } from "@/lib/db";
+import type { ResultSetHeader } from "mysql2";
+import { requireSession } from "@/lib/session";
+
+interface InjuryRow {
+  injury_id: number;
+  player_id: number;
+  injury_type: string;
+  body_area: string;
+  injury_date: string;
+  expected_return_date: string | null;
+  actual_return_date: string | null;
+  severity: string;
+  status: string;
+  notes: string | null;
+}
+
+function authErrorResponse(err: unknown): NextResponse {
+  if (err instanceof Error && err.message === "FORBIDDEN") {
+    return NextResponse.json({ error: "Admin privileges required." }, { status: 403 });
+  }
+  return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+}
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireSession();
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const { id } = await params;
+  const playerId = Number(id);
+  if (!Number.isInteger(playerId)) {
+    return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
+  }
+
+  const injuries = await query<InjuryRow[]>(
+    `SELECT injury_id, player_id, injury_type, body_area, injury_date,
+            expected_return_date, actual_return_date, severity, status, notes
+     FROM injury
+     WHERE player_id = ?
+     ORDER BY injury_date DESC`,
+    [playerId]
+  );
+
+  return NextResponse.json({ injuries });
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireSession(["ADMIN"]);
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const { id } = await params;
+  const playerId = Number(id);
+  if (!Number.isInteger(playerId)) {
+    return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
+  }
+
+  const body = await request.json();
+  const {
+    injury_type,
+    body_area,
+    injury_date,
+    expected_return_date,
+    actual_return_date,
+    severity,
+    status,
+    notes,
+  } = body;
+
+  if (!injury_type || !body_area || !injury_date || !severity) {
+    return NextResponse.json(
+      { error: "injury_type, body_area, injury_date, and severity are required." },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const result = await query<ResultSetHeader>(
+      `INSERT INTO injury
+         (player_id, injury_type, body_area, injury_date, expected_return_date,
+          actual_return_date, severity, status, notes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        playerId,
+        injury_type,
+        body_area,
+        injury_date,
+        expected_return_date ?? null,
+        actual_return_date ?? null,
+        severity,
+        status ?? "ACTIVE",
+        notes ?? null,
+      ]
+    );
+    return NextResponse.json({ injury_id: result.insertId }, { status: 201 });
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    const message = err instanceof Error ? err.message : "Failed to create injury record.";
+    if (code === "ER_SIGNAL_EXCEPTION") {
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Failed to create injury record." }, { status: 500 });
+  }
+}
+=== src/app/api/players/[id]/reports/route.ts ===
+import { NextRequest, NextResponse } from "next/server";
+import { query, getPool } from "@/lib/db";
+import { requireSession } from "@/lib/session";
+
+interface ScoutReportRow {
+  report_id: number;
+  scout_user_id: number;
+  scout_name: string;
+  player_id: number;
+  overall_rating: string;
+  strengths: string | null;
+  weaknesses: string | null;
+  tactical_fit: string | null;
+  recommendation: string;
+  notes: string | null;
+  created_at: string;
+}
+
+function authErrorResponse(err: unknown): NextResponse {
+  if (err instanceof Error && err.message === "FORBIDDEN") {
+    return NextResponse.json({ error: "Scout privileges required." }, { status: 403 });
+  }
+  return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+}
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireSession();
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const { id } = await params;
+  const playerId = Number(id);
+  if (!Number.isInteger(playerId)) {
+    return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
+  }
+
+  const reports = await query<ScoutReportRow[]>(
+    `SELECT r.report_id, r.scout_user_id, u.full_name AS scout_name, r.player_id,
+            r.overall_rating, r.strengths, r.weaknesses, r.tactical_fit,
+            r.recommendation, r.notes, r.created_at
+     FROM scout_report r
+     INNER JOIN \`user\` u ON u.user_id = r.scout_user_id
+     WHERE r.player_id = ?
+     ORDER BY r.created_at DESC`,
+    [playerId]
+  );
+
+  return NextResponse.json({ reports });
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  let session;
+  try {
+    session = await requireSession(["SCOUT", "ADMIN"]);
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const { id } = await params;
+  const playerId = Number(id);
+  if (!Number.isInteger(playerId)) {
+    return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
+  }
+
+  const body = await request.json();
+  const { overall_rating, strengths, weaknesses, tactical_fit, recommendation, notes } = body;
+
+  if (overall_rating === undefined || !recommendation) {
+    return NextResponse.json(
+      { error: "overall_rating and recommendation are required." },
+      { status: 400 }
+    );
+  }
+
+  const pool = getPool();
+  try {
+    // Uses sp_add_scout_recommendation so the report insert and the
+    // SHORTLIST/PRIORITY auto-add to shortlist happen atomically.
+    await pool.execute(`CALL sp_add_scout_recommendation(?, ?, ?, ?, ?, ?, ?, ?)`, [
+      session.userId,
+      playerId,
+      overall_rating,
+      strengths ?? null,
+      weaknesses ?? null,
+      tactical_fit ?? null,
+      recommendation,
+      notes ?? null,
+    ]);
+    return NextResponse.json({ message: "Scout report created." }, { status: 201 });
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    const message = err instanceof Error ? err.message : "Failed to create scout report.";
+    if (code === "ER_SIGNAL_EXCEPTION") {
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Failed to create scout report." }, { status: 500 });
+  }
+}
+
+=== src/app/api/players/[id]/route.ts ===
+import { NextRequest, NextResponse } from "next/server";
+import { query } from "@/lib/db";
+import { requireSession } from "@/lib/session";
+
+interface PlayerDetailRow {
+  player_id: number;
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  nationality: string;
+  primary_position: string;
+  secondary_position: string | null;
+  preferred_foot: string;
+  height_cm: number | null;
+  club_id: number | null;
+  club_name: string | null;
+  league_name: string | null;
+  market_value: string | null;
+  contract_end: string | null;
+  availability: "AVAILABLE" | "INJURED";
+  injury_type: string | null;
+  expected_return_date: string | null;
+}
+
+interface LatestStatsRow {
+  season: string;
+  appearances: number;
+  starts: number;
+  minutes_played: number;
+  goals: number;
+  assists: number;
+  xg: string;
+  xa: string;
+  shots: number;
+  shots_on_target: number;
+  key_passes: number;
+  progressive_passes: number;
+  pass_accuracy: string;
+  tackles: number;
+  interceptions: number;
+}
+
+function authErrorResponse(): NextResponse {
+  return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+}
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireSession();
+  } catch {
+    return authErrorResponse();
+  }
+
+  const { id } = await params;
+  const playerId = Number(id);
+  if (!Number.isInteger(playerId)) {
+    return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
+  }
+
+  const snapshotRows = await query<PlayerDetailRow[]>(
+    `SELECT
+       p.player_id, p.first_name, p.last_name, p.date_of_birth, p.nationality,
+       p.primary_position, p.secondary_position, p.preferred_foot, p.height_cm,
+       pc.club_id, cl.club_name, lg.league_name,
+       lmv.market_value, ce.end_date AS contract_end,
+       CASE WHEN av.player_id IS NULL THEN 'INJURED' ELSE 'AVAILABLE' END AS availability,
+       active_inj.injury_type, active_inj.expected_return_date
+     FROM player p
+     LEFT JOIN player_club pc ON pc.player_id = p.player_id AND pc.is_current = TRUE
+     LEFT JOIN club cl ON cl.club_id = pc.club_id
+     LEFT JOIN league lg ON lg.league_id = cl.league_id
+     LEFT JOIN vw_latest_market_values lmv ON lmv.player_id = p.player_id
+     LEFT JOIN vw_contract_expiry ce ON ce.player_id = p.player_id
+     LEFT JOIN vw_available_players av ON av.player_id = p.player_id
+     LEFT JOIN (
+       SELECT i1.player_id, i1.injury_type, i1.expected_return_date
+       FROM injury i1
+       WHERE i1.status IN ('ACTIVE', 'RECOVERING')
+         AND i1.injury_date = (
+           SELECT MAX(i2.injury_date) FROM injury i2
+           WHERE i2.player_id = i1.player_id AND i2.status IN ('ACTIVE', 'RECOVERING')
+         )
+     ) active_inj ON active_inj.player_id = p.player_id
+     WHERE p.player_id = ?`,
+    [playerId]
+  );
+
+  const player = snapshotRows[0];
+  if (!player) {
+    return NextResponse.json({ error: "Player not found." }, { status: 404 });
+  }
+
+  const statsRows = await query<LatestStatsRow[]>(
+    `SELECT season, appearances, starts, minutes_played, goals, assists, xg, xa,
+            shots, shots_on_target, key_passes, progressive_passes,
+            pass_accuracy, tackles, interceptions
+     FROM player_statistics
+     WHERE player_id = ?
+     ORDER BY season DESC
+     LIMIT 1`,
+    [playerId]
+  );
+
+  return NextResponse.json({
+    player,
+    latestSeasonStats: statsRows[0] ?? null,
+  });
+}
+
+=== src/app/api/players/[id]/transfers/route.ts ===
+import { NextRequest, NextResponse } from "next/server";
+import { query, getPool } from "@/lib/db";
+import { requireSession } from "@/lib/session";
+
+interface TransferRow {
+  transfer_id: number;
+  player_id: number;
+  from_club_id: number | null;
+  to_club_id: number | null;
+  transfer_date: string;
+  transfer_fee: string | null;
+  currency: string;
+  transfer_type: string;
+  notes: string | null;
+}
+
+function authErrorResponse(err: unknown): NextResponse {
+  if (err instanceof Error && err.message === "FORBIDDEN") {
+    return NextResponse.json({ error: "Admin privileges required." }, { status: 403 });
+  }
+  return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+}
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireSession();
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const { id } = await params;
+  const playerId = Number(id);
+  if (!Number.isInteger(playerId)) {
+    return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
+  }
+
+  const transfers = await query<TransferRow[]>(
+    `SELECT transfer_id, player_id, from_club_id, to_club_id, transfer_date,
+            transfer_fee, currency, transfer_type, notes
+     FROM transfer
+     WHERE player_id = ?
+     ORDER BY transfer_date DESC`,
+    [playerId]
+  );
+
+  return NextResponse.json({ transfers });
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireSession(["ADMIN"]);
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const { id } = await params;
+  const playerId = Number(id);
+  if (!Number.isInteger(playerId)) {
+    return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
+  }
+
+  const body = await request.json();
+  const {
+    from_club_id,
+    to_club_id,
+    transfer_date,
+    transfer_fee,
+    currency,
+    transfer_type,
+    notes,
+  } = body;
+
+  if (!transfer_date || !transfer_type) {
+    return NextResponse.json(
+      { error: "transfer_date and transfer_type are required." },
+      { status: 400 }
+    );
+  }
+
+  const pool = getPool();
+  try {
+    // Uses sp_record_transfer so the TRANSFER insert and the PLAYER_CLUB
+    // membership update happen atomically (see migration 013).
+    await pool.execute(`CALL sp_record_transfer(?, ?, ?, ?, ?, ?, ?, ?)`, [
+      playerId,
+      from_club_id ?? null,
+      to_club_id ?? null,
+      transfer_date,
+      transfer_fee ?? null,
+      currency ?? "EUR",
+      transfer_type,
+      notes ?? null,
+    ]);
+    return NextResponse.json({ message: "Transfer recorded." }, { status: 201 });
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    const message = err instanceof Error ? err.message : "Failed to record transfer.";
+    if (code === "ER_SIGNAL_EXCEPTION") {
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Failed to record transfer." }, { status: 500 });
+  }
+}
+
+=== src/app/api/players/[id]/valuations/route.ts ===
+import { NextRequest, NextResponse } from "next/server";
+import { query } from "@/lib/db";
+import type { ResultSetHeader } from "mysql2";
+import { requireSession } from "@/lib/session";
+
+interface ValuationRow {
+  valuation_id: number;
+  player_id: number;
+  valuation_date: string;
+  market_value: string;
+  currency: string;
+  source_label: string | null;
+}
+
+function authErrorResponse(err: unknown): NextResponse {
+  if (err instanceof Error && err.message === "FORBIDDEN") {
+    return NextResponse.json({ error: "Admin privileges required." }, { status: 403 });
+  }
+  return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+}
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireSession();
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const { id } = await params;
+  const playerId = Number(id);
+  if (!Number.isInteger(playerId)) {
+    return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
+  }
+
+  const valuations = await query<ValuationRow[]>(
+    `SELECT valuation_id, player_id, valuation_date, market_value, currency, source_label
+     FROM market_value_history
+     WHERE player_id = ?
+     ORDER BY valuation_date ASC`,
+    [playerId]
+  );
+
+  return NextResponse.json({ valuations });
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireSession(["ADMIN"]);
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const { id } = await params;
+  const playerId = Number(id);
+  if (!Number.isInteger(playerId)) {
+    return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
+  }
+
+  const body = await request.json();
+  const { valuation_date, market_value, currency, source_label } = body;
+
+  if (!valuation_date || market_value === undefined || market_value === null) {
+    return NextResponse.json(
+      { error: "valuation_date and market_value are required." },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const result = await query<ResultSetHeader>(
+      `INSERT INTO market_value_history (player_id, valuation_date, market_value, currency, source_label)
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE market_value = VALUES(market_value), source_label = VALUES(source_label)`,
+      [playerId, valuation_date, market_value, currency ?? "EUR", source_label ?? null]
+    );
+    return NextResponse.json({ valuation_id: result.insertId }, { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to create valuation.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+=== src/app/api/players/route.ts ===
+import { NextRequest, NextResponse } from "next/server";
+import { query } from "@/lib/db";
+import { requireSession } from "@/lib/session";
+
+interface PlayerRow {
+  player_id: number;
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  nationality: string;
+  primary_position: string;
+  preferred_foot: string;
+  height_cm: number | null;
+  club_name: string | null;
+  league_name: string | null;
+  market_value: string | null;
+  contract_end: string | null;
+  availability: "AVAILABLE" | "INJURED";
+  appearances: number | null;
+  goals: number | null;
+  assists: number | null;
+  xg: string | null;
+  xa: string | null;
+  pass_accuracy: string | null;
+  key_passes: number | null;
+  tackles: number | null;
+  interceptions: number | null;
+  injury_count: number;
+}
+
+const CURRENT_SEASON = "2025-2026";
+
+export async function GET(request: NextRequest) {
+  try {
+    await requireSession();
+  } catch {
+    return NextResponse.json(
+      { error: "Authentication required." },
+      { status: 401 }
+    );
+  }
+
+  const { searchParams } = new URL(request.url);
+
+  // --- Basic ---
+  const name = searchParams.get("name")?.trim();
+  const position = searchParams.get("position")?.trim();
+  const nationality = searchParams.get("nationality")?.trim();
+  const preferredFoot = searchParams.get("preferredFoot")?.trim();
+  const club = searchParams.get("club")?.trim();
+  const league = searchParams.get("league")?.trim();
+  const ageMin = searchParams.get("ageMin");
+  const ageMax = searchParams.get("ageMax");
+
+  // --- Performance ---
+  const minAppearances = searchParams.get("minAppearances");
+  const minMinutes = searchParams.get("minMinutes");
+  const minGoals = searchParams.get("minGoals");
+  const minAssists = searchParams.get("minAssists");
+  const minXg = searchParams.get("minXg");
+  const minXa = searchParams.get("minXa");
+  const minPassAccuracy = searchParams.get("minPassAccuracy");
+  const minKeyPasses = searchParams.get("minKeyPasses");
+  const minTackles = searchParams.get("minTackles");
+  const minInterceptions = searchParams.get("minInterceptions");
+
+  // --- Recruitment ---
+  const maxMarketValue = searchParams.get("maxMarketValue");
+  const contractExpiresBefore = searchParams.get("contractExpiresBefore");
+  const maxContractMonths = searchParams.get("maxContractMonths");
+
+  // --- Fitness ---
+  const availableOnly = searchParams.get("availableOnly") === "true";
+  const injurySeverity = searchParams.get("injurySeverity")?.trim();
+  const maxInjuryCount = searchParams.get("maxInjuryCount");
+
+  const conditions: string[] = [];
+  const havingConditions: string[] = [];
+  const params: Array<string | number> = [];
+
+  if (name) {
+    conditions.push(`(p.first_name LIKE ? OR p.last_name LIKE ?)`);
+    params.push(`%${name}%`, `%${name}%`);
+  }
+  if (position) {
+    conditions.push(`p.primary_position = ?`);
+    params.push(position);
+  }
+  if (nationality) {
+    conditions.push(`p.nationality = ?`);
+    params.push(nationality);
+  }
+  if (preferredFoot) {
+    conditions.push(`p.preferred_foot = ?`);
+    params.push(preferredFoot);
+  }
+  if (club) {
+    conditions.push(`cl.club_name LIKE ?`);
+    params.push(`%${club}%`);
+  }
+  if (league) {
+    conditions.push(`lg.league_name LIKE ?`);
+    params.push(`%${league}%`);
+  }
+  if (ageMin) {
+    conditions.push(`TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) >= ?`);
+    params.push(Number(ageMin));
+  }
+  if (ageMax) {
+    conditions.push(`TIMESTAMPDIFF(YEAR, p.date_of_birth, CURDATE()) <= ?`);
+    params.push(Number(ageMax));
+  }
+  if (maxMarketValue) {
+    conditions.push(`lmv.market_value <= ?`);
+    params.push(Number(maxMarketValue));
+  }
+  if (contractExpiresBefore) {
+    conditions.push(`ce.end_date <= ?`);
+    params.push(contractExpiresBefore);
+  }
+  if (maxContractMonths) {
+    conditions.push(
+      `ce.end_date IS NOT NULL AND TIMESTAMPDIFF(MONTH, CURDATE(), ce.end_date) <= ?`
+    );
+    params.push(Number(maxContractMonths));
+  }
+  if (availableOnly) {
+    conditions.push(`av.player_id IS NOT NULL`);
+  }
+  if (injurySeverity) {
+    conditions.push(
+      `EXISTS (SELECT 1 FROM injury i WHERE i.player_id = p.player_id AND i.severity = ? AND i.status IN ('ACTIVE','RECOVERING'))`
+    );
+    params.push(injurySeverity);
+  }
+
+  // Performance filters apply to HAVING because they reference the joined
+  // player_statistics columns, and NULL-safe comparisons here are simpler
+  // expressed post-join with COALESCE than repeated in WHERE.
+  if (minAppearances) {
+    havingConditions.push(`COALESCE(ps.appearances, 0) >= ?`);
+    params.push(Number(minAppearances));
+  }
+  if (minMinutes) {
+    havingConditions.push(`COALESCE(ps.minutes_played, 0) >= ?`);
+    params.push(Number(minMinutes));
+  }
+  if (minGoals) {
+    havingConditions.push(`COALESCE(ps.goals, 0) >= ?`);
+    params.push(Number(minGoals));
+  }
+  if (minAssists) {
+    havingConditions.push(`COALESCE(ps.assists, 0) >= ?`);
+    params.push(Number(minAssists));
+  }
+  if (minXg) {
+    havingConditions.push(`COALESCE(ps.xg, 0) >= ?`);
+    params.push(Number(minXg));
+  }
+  if (minXa) {
+    havingConditions.push(`COALESCE(ps.xa, 0) >= ?`);
+    params.push(Number(minXa));
+  }
+  if (minPassAccuracy) {
+    havingConditions.push(`COALESCE(ps.pass_accuracy, 0) >= ?`);
+    params.push(Number(minPassAccuracy));
+  }
+  if (minKeyPasses) {
+    havingConditions.push(`COALESCE(ps.key_passes, 0) >= ?`);
+    params.push(Number(minKeyPasses));
+  }
+  if (minTackles) {
+    havingConditions.push(`COALESCE(ps.tackles, 0) >= ?`);
+    params.push(Number(minTackles));
+  }
+  if (minInterceptions) {
+    havingConditions.push(`COALESCE(ps.interceptions, 0) >= ?`);
+    params.push(Number(minInterceptions));
+  }
+  if (maxInjuryCount) {
+    havingConditions.push(`injury_count <= ?`);
+    params.push(Number(maxInjuryCount));
+  }
+
+  const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const havingClause = havingConditions.length
+    ? `HAVING ${havingConditions.join(" AND ")}`
+    : "";
+
+  const sql = `
+    SELECT
+      p.player_id, p.first_name, p.last_name, p.date_of_birth, p.nationality,
+      p.primary_position, p.preferred_foot, p.height_cm,
+      cl.club_name, lg.league_name,
+      lmv.market_value, ce.end_date AS contract_end,
+      CASE WHEN av.player_id IS NULL THEN 'INJURED' ELSE 'AVAILABLE' END AS availability,
+      ps.appearances, ps.goals, ps.assists, ps.xg, ps.xa,
+      ps.pass_accuracy, ps.key_passes, ps.tackles, ps.interceptions,
+      COALESCE(ic.injury_count, 0) AS injury_count
+    FROM player p
+    LEFT JOIN player_club pc ON pc.player_id = p.player_id AND pc.is_current = TRUE
+    LEFT JOIN club cl ON cl.club_id = pc.club_id
+    LEFT JOIN league lg ON lg.league_id = cl.league_id
+    LEFT JOIN vw_latest_market_values lmv ON lmv.player_id = p.player_id
+    LEFT JOIN vw_contract_expiry ce ON ce.player_id = p.player_id
+    LEFT JOIN vw_available_players av ON av.player_id = p.player_id
+    LEFT JOIN player_statistics ps ON ps.player_id = p.player_id AND ps.season = ?
+    LEFT JOIN (
+      SELECT player_id, COUNT(*) AS injury_count FROM injury GROUP BY player_id
+    ) ic ON ic.player_id = p.player_id
+    ${whereClause}
+    ${havingClause}
+    ORDER BY p.last_name, p.first_name
+    LIMIT 100
+  `;
+
+  const players = await query<PlayerRow[]>(sql, [CURRENT_SEASON, ...params]);
+
+  return NextResponse.json({ players });
+}
+=== src/app/api/shortlist/[id]/route.ts ===
+import { NextRequest, NextResponse } from "next/server";
+import { query } from "@/lib/db";
+import type { ResultSetHeader, RowDataPacket } from "mysql2";
+import { requireSession } from "@/lib/session";
+
+function authErrorResponse(err: unknown): NextResponse {
+  if (err instanceof Error && err.message === "FORBIDDEN") {
+    return NextResponse.json({ error: "Scout privileges required." }, { status: 403 });
+  }
+  return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+}
+
+async function loadOwnedShortlistEntry(shortlistId: number, scoutUserId: number) {
+  const rows = await query<RowDataPacket[]>(
+    `SELECT shortlist_id, scout_user_id FROM shortlist WHERE shortlist_id = ?`,
+    [shortlistId]
+  );
+  const entry = rows[0];
+  if (!entry) return { entry: null, owned: false };
+  return { entry, owned: entry.scout_user_id === scoutUserId };
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  let session;
+  try {
+    session = await requireSession(["SCOUT", "ADMIN"]);
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const { id } = await params;
+  const shortlistId = Number(id);
+  if (!Number.isInteger(shortlistId)) {
+    return NextResponse.json({ error: "Invalid shortlist id." }, { status: 400 });
+  }
+
+  const { entry, owned } = await loadOwnedShortlistEntry(shortlistId, session.userId);
+  if (!entry) {
+    return NextResponse.json({ error: "Shortlist entry not found." }, { status: 404 });
+  }
+  if (!owned && session.role !== "ADMIN") {
+    return NextResponse.json(
+      { error: "You can only update your own shortlist entries." },
+      { status: 403 }
+    );
+  }
+
+  const body = await request.json();
+  const { priority, status, reason } = body;
+
+  const setClauses: string[] = [];
+  const setParams: Array<string> = [];
+  if (priority) {
+    setClauses.push("priority = ?");
+    setParams.push(priority);
+  }
+  if (status) {
+    setClauses.push("status = ?");
+    setParams.push(status);
+  }
+  if (reason !== undefined) {
+    setClauses.push("reason = ?");
+    setParams.push(reason);
+  }
+
+  if (setClauses.length === 0) {
+    return NextResponse.json({ error: "No fields to update." }, { status: 400 });
+  }
+
+  await query(
+    `UPDATE shortlist SET ${setClauses.join(", ")} WHERE shortlist_id = ?`,
+    [...setParams, shortlistId]
+  );
+
+  return NextResponse.json({ message: "Shortlist entry updated." });
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  let session;
+  try {
+    session = await requireSession(["SCOUT", "ADMIN"]);
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const { id } = await params;
+  const shortlistId = Number(id);
+  if (!Number.isInteger(shortlistId)) {
+    return NextResponse.json({ error: "Invalid shortlist id." }, { status: 400 });
+  }
+
+  const { entry, owned } = await loadOwnedShortlistEntry(shortlistId, session.userId);
+  if (!entry) {
+    return NextResponse.json({ error: "Shortlist entry not found." }, { status: 404 });
+  }
+  if (!owned && session.role !== "ADMIN") {
+    return NextResponse.json(
+      { error: "You can only remove your own shortlist entries." },
+      { status: 403 }
+    );
+  }
+
+  const result = await query<ResultSetHeader>(
+    `DELETE FROM shortlist WHERE shortlist_id = ?`,
+    [shortlistId]
+  );
+
+  return NextResponse.json({ deleted: result.affectedRows > 0 });
+}
+
+=== src/app/api/shortlist/route.ts ===
+import { NextRequest, NextResponse } from "next/server";
+import { query } from "@/lib/db";
+import type { ResultSetHeader } from "mysql2";
+import { requireSession } from "@/lib/session";
+
+interface ShortlistRow {
+  shortlist_id: number;
+  scout_user_id: number;
+  player_id: number;
+  player_name: string;
+  primary_position: string;
+  priority: string;
+  status: string;
+  reason: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function authErrorResponse(err: unknown): NextResponse {
+  if (err instanceof Error && err.message === "FORBIDDEN") {
+    return NextResponse.json({ error: "Scout privileges required." }, { status: 403 });
+  }
+  return NextResponse.json({ error: "Authentication required." }, { status: 401 });
+}
+
+export async function GET(request: NextRequest) {
+  let session;
+  try {
+    session = await requireSession();
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const { searchParams } = new URL(request.url);
+  const status = searchParams.get("status")?.trim();
+
+  const conditions = ["s.scout_user_id = ?"];
+  const paramsList: Array<string | number> = [session.userId];
+  if (status) {
+    conditions.push("s.status = ?");
+    paramsList.push(status);
+  }
+
+  const shortlist = await query<ShortlistRow[]>(
+    `SELECT s.shortlist_id, s.scout_user_id, s.player_id,
+            CONCAT(p.first_name, ' ', p.last_name) AS player_name,
+            p.primary_position, s.priority, s.status, s.reason,
+            s.created_at, s.updated_at
+     FROM shortlist s
+     INNER JOIN player p ON p.player_id = s.player_id
+     WHERE ${conditions.join(" AND ")}
+     ORDER BY s.updated_at DESC`,
+    paramsList
+  );
+
+  return NextResponse.json({ shortlist });
+}
+
+export async function POST(request: NextRequest) {
+  let session;
+  try {
+    session = await requireSession(["SCOUT", "ADMIN"]);
+  } catch (err) {
+    return authErrorResponse(err);
+  }
+
+  const body = await request.json();
+  const { player_id, priority, status, reason } = body;
+
+  if (!player_id) {
+    return NextResponse.json({ error: "player_id is required." }, { status: 400 });
+  }
+
+  try {
+    const result = await query<ResultSetHeader>(
+      `INSERT INTO shortlist (scout_user_id, player_id, priority, status, reason)
+       VALUES (?, ?, ?, ?, ?)`,
+      [session.userId, player_id, priority ?? "MEDIUM", status ?? "WATCHING", reason ?? null]
+    );
+    return NextResponse.json({ shortlist_id: result.insertId }, { status: 201 });
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    if (code === "ER_DUP_ENTRY") {
+      return NextResponse.json(
+        { error: "Player already exists in shortlist." },
+        { status: 409 }
+      );
+    }
+    const message = err instanceof Error ? err.message : "Failed to add to shortlist.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+

@@ -1,27 +1,57 @@
 # ScoutIQ
 
-Football scouting and recruitment intelligence platform.
+ScoutIQ is a scouting and recruitment intelligence platform for football
+teams and scouts. It provides tools to manage player records, perform
+comparisons, track contracts/injuries, and run similarity searches over
+player data (vector indexing). This repository contains an initial Phase 1
+implementation built with Next.js (App Router) and MySQL-backed data stores.
 
-This repository contains a Phase 1 implementation: a Next.js app (App Router)
-with role-based authentication, a pooled MySQL connection, DB migrations and
-seed scripts, basic player APIs, and several frontend pages for admin and
-scout workflows.
+Contents: a role-based auth system, DB migrations and seeders, REST-like API
+endpoints for players and admin, and a frontend with core scout/admin views.
 
-Status: Ready for local development — migrations, seed scripts, auth, and
-core pages are implemented. Additional data models and advanced features are
-planned (see "Future work").
+## Table of contents
 
-## Tech stack
+- Project overview
+- Architecture & key technologies
+- Getting started (local development)
+- Environment variables
+- Database: migrations & seeds
+- Important scripts
+- API & frontend summary
+- Development notes and troubleshooting
+- Contributing and pushing
+- License
+
+## Project overview
+
+The app implements the core pieces required to bootstrap a scouting tool:
+
+- User accounts with roles (admin, scout) and JWT-based session cookies.
+- Player entities, basic stats, contracts, injury records, and scout reports.
+- Admin pages for user management and basic data seeding utilities.
+- A similarity/vector index integration (Qdrant client hooks) and scripts to
+  rebuild vectors from DB data.
+
+This is intended as a developer-focused repo for rapid iteration and local
+testing; production hardening and deployment automation are not included.
+
+## Architecture & key technologies
 
 - Next.js 16 (App Router) + React 19 + TypeScript
-- Tailwind CSS v4
-- MySQL via `mysql2`
-- Auth: `bcryptjs` for password hashing and `jose` for JWT handling
+- Tailwind CSS v4 for styling
+- MySQL (via `mysql2`) for primary relational storage
+- Auth: `bcryptjs` for password hashing and `jose` for signing JWTs
 - Validation: `zod`
+- Vector index: Qdrant (client present; vector rebuild script included)
 
-See [package.json](package.json) for exact dependency versions and scripts.
+See [package.json](package.json) for exact dependency versions.
 
-## Quick start
+## Getting started (local development)
+
+Prerequisites:
+
+- Node.js 20+ and npm
+- A MySQL server accessible locally or remotely
 
 1. Install dependencies
 
@@ -29,25 +59,25 @@ See [package.json](package.json) for exact dependency versions and scripts.
 npm install
 ```
 
-2. Create a copy of environment file and edit values
+2. Copy environment template and edit values
 
 ```bash
 cp .env.example .env
-# set DB connection, AUTH_SECRET, and optional SEED_ADMIN_* variables
+# Edit values: DB_HOST, DB_USER, DB_PASSWORD, DB_DATABASE, AUTH_SECRET, etc.
 ```
 
-3. Create the database if needed
+3. Create the database (example)
 
 ```sql
-CREATE DATABASE scoutiq CHARACTER SET utf8mb4;
+CREATE DATABASE scoutiq CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 ```
 
-4. Run migrations and seeds
+4. Run migrations and seed admin + sample data
 
 ```bash
 npm run db:migrate
-npm run db:seed-admin   # creates/updates the ADMIN user
-npm run db:seed-football   # seed football-related sample data
+npm run db:seed-admin
+npm run db:seed-football
 ```
 
 5. Start the dev server
@@ -56,70 +86,119 @@ npm run db:seed-football   # seed football-related sample data
 npm run dev
 ```
 
-Open http://localhost:3000 and sign in via `/login`.
+Open http://localhost:3000 and sign in via the login page (`/login`).
+
+## Environment variables
+
+- `DB_HOST` — MySQL host (defaults may be `localhost`).
+- `DB_PORT` — MySQL port (usually `3306`).
+- `DB_USER` — Database user.
+- `DB_PASSWORD` — Database password.
+- `DB_DATABASE` — Database name (e.g., `scoutiq`).
+- `AUTH_SECRET` — Secret used to sign JWTs.
+- `QDRANT_URL` — Optional: Qdrant endpoint for vector indexing.
+- `QDRANT_API_KEY` — Optional: key for Qdrant if configured.
+- `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` — Optional credentials used
+  by the admin seed script.
+
+Adjust `.env` as needed before running migrations/seeds.
+
+## Database: migrations & seeds
+
+- Migration SQL files live in `src/db/migrations/`. The migration runner
+  (`src/scripts/migrate.ts`) applies files in lexicographic order.
+- Seed scripts are available in `src/scripts/` and include admin and sample
+  football data seeds.
+
+Common commands:
+
+- `npm run db:migrate` — apply DB migrations.
+- `npm run db:seed-admin` — create or update the ADMIN user from env vars.
+- `npm run db:seed-football` — seed sample clubs/players/contracts/etc.
+
+If you change the DB schema, add a new SQL file in
+`src/db/migrations/` with a sequential prefix (e.g. `015_my_change.sql`).
 
 ## Important scripts
 
-- `npm run db:migrate` — runs `src/scripts/migrate.ts` to apply SQL files in
-  `src/db/migrations/`.
-- `npm run db:seed-admin` — seeds or updates an ADMIN user (uses
-  `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` env vars when present).
-- `npm run db:seed-football` — seeds sample football data for development.
+From `package.json`:
 
-## Key files and locations
+- `dev` — `next dev` (start development server)
+- `build` — `next build` (build production assets)
+- `start` — `next start` (start production server)
+- `lint` — run ESLint
+- `db:migrate` — runs `src/scripts/migrate.ts`
+- `db:seed-admin` — runs `src/scripts/seed-admin.ts`
+- `db:seed-football` — runs `src/scripts/seed-football.ts`
+- `db:seed-recruitment` — additional recruitment-specific seed
+- `rebuild-vectors` — rebuilds Qdrant vectors from DB data
 
-- DB migrations: `src/db/migrations/001_create_users.sql`,
-  `src/db/migrations/002_create_core_football_entities.sql`
-- Migration runner: `src/scripts/migrate.ts`
-- DB helpers: `src/lib/db.ts`
-- Auth/session helpers: `src/lib/auth.ts`, `src/lib/session.ts`
-- API routes: `src/app/api/auth/*`, `src/app/api/players/route.ts`,
-  `src/app/api/admin/users/route.ts`
-- Frontend app shell & pages: `src/app/(app)/` (dashboard, players, compare,
-  shortlist, reports) and `src/app/login/` (login form/page)
+Use `npm run <script>` to run each helper.
 
-Inspect these first when picking up work locally. The most relevant starting
-files are `src/lib/db.ts`, `src/lib/auth.ts`, `src/scripts/migrate.ts`, and
-`src/app/api/auth/login/route.ts`.
+## API & frontend summary
 
-## Auth & security notes
+- API routes are implemented under `src/app/api/` using Next.js route handlers.
+  Examples:
+  - `src/app/api/auth/login/route.ts` — login
+  - `src/app/api/auth/logout/route.ts` — logout
+  - `src/app/api/auth/me/route.ts` — current user
+  - `src/app/api/players/route.ts` — players list
+  - `src/app/api/players/[id]/route.ts` — per-player subroutes
 
-- Passwords: hashed with `bcryptjs` before storage.
-- Sessions: JWTs signed via `jose` and stored in an `httpOnly` cookie.
-- `middleware.ts` provides edge-level route protection by role; API routes
-  perform server-side role checks as well.
+- The main app UI is located in `src/app/(app)/` and includes dashboard,
+  players, comparison, shortlist and reports pages.
 
-## What has been implemented
+## Development notes and troubleshooting
 
-- Project scaffolding using Next.js App Router and TypeScript.
-- Pooled MySQL connection and basic query helpers.
-- DB migrations and seed scripts for users and football entities.
-- Admin user seed script and UI for creating users.
-- Auth endpoints: login, logout, current user (`/api/auth/*`).
-- Players API and players table UI.
+- If migrations fail, inspect `src/db/migrations/` SQL files for ordering
+  or SQL errors. The migration script executes files in filename order.
+- For DB connection issues, validate the `.env` values and that MySQL is
+  reachable from your environment.
+- If push/pull from GitHub requires authentication, configure a remote
+  using HTTPS with a personal access token or set up SSH keys.
 
-## Next steps / TODOs
+Common troubleshooting commands:
 
-- Expand the data model: `PLAYER_STATISTICS`, `INJURY`, `CONTRACT`, etc.
-- Add player detail pages and comparison views.
-- Implement Qdrant vector indexing for similarity search.
-- Add tests and CI (linting and migration checks).
+```bash
+# check repo status
+git status
+# view remotes
+git remote -v
+```
 
-## Contributing / pushing changes
+## Contributing & pushing changes
 
-This repo is configured for local Git. To push changes to your remote
-repository, set the `origin` remote and push the current branch:
+- Work on feature branches, commit logically, and open a PR for review.
+- To push your current branch to GitHub (example HTTPS remote):
 
 ```bash
 git remote add origin https://github.com/UjwalSanikam/DBMS_PROJECT.git
 git push -u origin $(git rev-parse --abbrev-ref HEAD)
 ```
 
-If `origin` already exists and points elsewhere, update it first with
-`git remote set-url origin <url>`.
+- If `origin` already exists and needs updating:
+
+```bash
+git remote set-url origin <url>
+```
+
+Note: pushing to a remote may require credentials. For CI-friendly
+workflows prefer using SSH keys or a GitHub personal access token.
+
+## Deployment
+
+This repo is not prescriptive about hosting. For production deploys, build
+the Next.js app (`npm run build`) and host using a Node process or a
+platform with Next.js support (Vercel, Fly, Render, etc.). Ensure your DB
+and Qdrant endpoints are accessible from the host and env vars are set.
+
+## License
+
+This project does not include a license file. Add a `LICENSE` file to make
+licensing clear for contributors and users.
 
 ---
 
-If you want, I can run the migrations and push this README change to the
-GitHub repo you provided. Reply to confirm and (if needed) provide any SSH
-or token instructions if the push requires authentication beyond HTTPS.
+If you want, I can commit this README change and push it to your configured
+GitHub remote. Reply to confirm and provide the remote URL if you'd like
+me to set or change it before pushing.
