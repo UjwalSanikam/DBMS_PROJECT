@@ -85,6 +85,22 @@ export async function POST(
   }
 
   try {
+    const resolvedStatus = contract_status ?? "ACTIVE";
+
+    // MySQL won't let a trigger on `contract` modify `contract` (error
+    // 1442), so "only one ACTIVE contract per player" is enforced here
+    // instead of in a trigger: expire any existing active contract for
+    // this player immediately before inserting the new one, in the same
+    // request (not a DB transaction here, but this route only ever runs
+    // one write per request so that's fine).
+    if (resolvedStatus === "ACTIVE") {
+      await query(
+        `UPDATE contract SET contract_status = 'EXPIRED'
+         WHERE player_id = ? AND contract_status = 'ACTIVE'`,
+        [playerId]
+      );
+    }
+
     const result = await query<ResultSetHeader>(
       `INSERT INTO contract
          (player_id, club_id, start_date, end_date, weekly_salary,
@@ -98,7 +114,7 @@ export async function POST(
         weekly_salary ?? null,
         release_clause ?? null,
         currency ?? "EUR",
-        contract_status ?? "ACTIVE",
+        resolvedStatus,
       ]
     );
     return NextResponse.json({ contract_id: result.insertId }, { status: 201 });

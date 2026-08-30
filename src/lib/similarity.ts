@@ -59,19 +59,22 @@ export async function buildRawFeatureVectors(
     [season, MIN_MINUTES_FOR_VECTOR]
   );
 
-  return rows.map((r) => ({
-    player_id: r.player_id,
-    goals_per_90: per90(r.goals, r.minutes_played),
-    assists_per_90: per90(r.assists, r.minutes_played),
-    xg_per_90: per90(r.xg, r.minutes_played),
-    xa_per_90: per90(r.xa, r.minutes_played),
-    shots_per_90: per90(r.shots, r.minutes_played),
-    key_passes_per_90: per90(r.key_passes, r.minutes_played),
-    progressive_passes_per_90: per90(r.progressive_passes, r.minutes_played),
-    pass_accuracy: r.pass_accuracy, // already a percentage, not per-90'd
-    tackles_per_90: per90(r.tackles, r.minutes_played),
-    interceptions_per_90: per90(r.interceptions, r.minutes_played),
-  }));
+    return rows.map((r) => {
+    const minutes = Number(r.minutes_played);
+    return {
+      player_id: r.player_id,
+      goals_per_90: per90(Number(r.goals), minutes),
+      assists_per_90: per90(Number(r.assists), minutes),
+      xg_per_90: per90(Number(r.xg), minutes),
+      xa_per_90: per90(Number(r.xa), minutes),
+      shots_per_90: per90(Number(r.shots), minutes),
+      key_passes_per_90: per90(Number(r.key_passes), minutes),
+      progressive_passes_per_90: per90(Number(r.progressive_passes), minutes),
+      pass_accuracy: Number(r.pass_accuracy),
+      tackles_per_90: per90(Number(r.tackles), minutes),
+      interceptions_per_90: per90(Number(r.interceptions), minutes),
+    };
+  });
 }
 
 const FEATURE_KEYS: (keyof Omit<RawFeatureVector, "player_id">)[] = [

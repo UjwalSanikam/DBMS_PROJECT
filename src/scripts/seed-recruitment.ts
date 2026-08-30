@@ -110,9 +110,23 @@ async function main() {
     statCount += 1;
   }
   console.log(`Seeded/updated ${statCount} player_statistics row(s) for ${CURRENT_SEASON}.`);
-    // --- Contracts (one active contract per player) ---
+  // --- Contracts (one active contract per player; skipped for players who
+  // already have an ACTIVE contract -- e.g. real ones from the Transfermarkt
+  // import. Now that the single-active-contract trigger is gone (see
+  // migration 017), nothing else stops a second ACTIVE row from being
+  // inserted here, so this check is what enforces the invariant instead.) ---
   let contractCount = 0;
+  let contractSkipped = 0;
   for (const row of players) {
+    const [[activeExists]] = await conn.query<mysql.RowDataPacket[]>(
+      `SELECT contract_id FROM contract WHERE player_id = ? AND contract_status = 'ACTIVE' LIMIT 1`,
+      [row.player_id]
+    );
+    if (activeExists) {
+      contractSkipped += 1;
+      continue;
+    }
+
     const startYear = 2022 + randInt(0, 3);
     const contractLengthYears = randInt(1, 5);
     const startDate = `${startYear}-07-01`;
@@ -122,20 +136,16 @@ async function main() {
       `INSERT INTO contract
          (player_id, club_id, start_date, end_date, weekly_salary,
           release_clause, currency, contract_status)
-       SELECT ?, ?, ?, ?, ?, ?, 'EUR', 'ACTIVE'
-       WHERE NOT EXISTS (
-         SELECT 1 FROM contract WHERE player_id = ? AND club_id = ? AND start_date = ?
-       )`,
+       VALUES (?, ?, ?, ?, ?, ?, 'EUR', 'ACTIVE')`,
       [
         row.player_id, row.club_id, startDate, endDate,
         randInt(5000, 180000),
         Math.random() < 0.6 ? randInt(2_000_000, 90_000_000) : null,
-        row.player_id, row.club_id, startDate,
       ]
     );
     contractCount += 1;
   }
-  console.log(`Processed ${contractCount} contract row(s).`);
+  console.log(`Inserted ${contractCount} new contract row(s), skipped ${contractSkipped} player(s) who already had an active contract.`);
 
   // --- Injuries (about 40% of players get 1, some get 2, to allow "repeated injury" queries) ---
   const INJURY_TYPES: [string, string][] = [
