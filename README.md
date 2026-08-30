@@ -1,13 +1,11 @@
 # ScoutIQ
 
 ScoutIQ is a scouting and recruitment intelligence platform for football
-teams and scouts. It provides tools to manage player records, perform
-comparisons, track contracts/injuries, and run similarity searches over
-player data (vector indexing). This repository contains an initial Phase 1
-implementation built with Next.js (App Router) and MySQL-backed data stores.
-
-Contents: a role-based auth system, DB migrations and seeders, REST-like API
-endpoints for players and admin, and a frontend with core scout/admin views.
+teams and scouts. This repository contains a working Phase 1+ implementation
+that includes authentication, a relational data model for players and
+football entities, a vector-index integration for similarity search, import
+and seed scripts, a simple admin UI, and a set of API endpoints and pages to
+support core scouting workflows.
 
 ## Table of contents
 
@@ -33,7 +31,8 @@ The app implements the core pieces required to bootstrap a scouting tool:
   rebuild vectors from DB data.
 
 This is intended as a developer-focused repo for rapid iteration and local
-testing; production hardening and deployment automation are not included.
+testing; production hardening, monitoring, and deployment automation are not
+included out of the box.
 
 ## Architecture & key technologies
 
@@ -45,6 +44,83 @@ testing; production hardening and deployment automation are not included.
 - Vector index: Qdrant (client present; vector rebuild script included)
 
 See [package.json](package.json) for exact dependency versions.
+
+## Exhaustive feature list (implemented)
+
+The following features are implemented in this repository. Pick the files
+noted below to inspect each feature's implementation.
+
+- Authentication & authorization
+  - Role-based users with `ADMIN` and `SCOUT` roles (`src/db/migrations/001_create_users.sql`).
+  - Password hashing with `bcryptjs` and JWT session cookies signed with `jose`.
+  - Login/logout and current-user endpoints: `src/app/api/auth/login/route.ts`, `src/app/api/auth/logout/route.ts`, `src/app/api/auth/me/route.ts`.
+  - Edge middleware protection: `src/middleware.ts`.
+
+- Users / Admin
+  - Admin user management API: `src/app/api/admin/users/route.ts`.
+  - Admin UI for creating users: `src/app/(app)/admin/users/new-user-form.tsx` and admin users page.
+  - Seed script to create/update ADMIN user: `src/scripts/seed-admin.ts`.
+
+- Players & football data model
+  - Player entities and core football tables via migrations in `src/db/migrations/` (players, clubs, competitions, player statistics, contracts, injuries, transfers, market value history, scout reports, shortlist, views, procedures, and triggers).
+  - Player list API: `src/app/api/players/route.ts`.
+  - Per-player endpoints for details, contracts, injuries, transfers, valuations, reports: `src/app/api/players/[id]/route.ts`, and subroutes under `src/app/api/players/[id]/*`.
+  - Player UI pages and components: `src/app/(app)/players/page.tsx`, `src/app/(app)/players/players-table.tsx`, `src/app/(app)/players/[id]/page.tsx`, `player-photo.tsx`, and `similar-players.tsx`.
+
+- Similarity / vector search
+  - Qdrant client helper and integrations: `src/lib/qdrant.ts`, `src/lib/similarity.ts`.
+  - Rebuild vectors script: `src/scripts/rebuild-vectors.ts`.
+  - API route to fetch similar players: `src/app/api/players/[id]/similar/route.ts`.
+
+- Comparison, shortlist & reports
+  - Player comparison API: `src/app/api/players/compare/route.ts` and comparison UI: `src/app/(app)/compare/page.tsx`.
+  - Shortlist API and pages: `src/app/api/shortlist/route.ts`, `src/app/api/shortlist/[id]/route.ts`, and `src/app/(app)/shortlist/page.tsx`.
+  - Reports API and UI: `src/app/api/reports/route.ts`, `src/app/(app)/reports/page.tsx`.
+
+- Contracts / transfers / valuations / injuries
+  - Dedicated per-player endpoints to manage/view contracts, transfers, valuations, and injuries: `src/app/api/players/[id]/contracts/route.ts`, `.../transfers/route.ts`, `.../valuations/route.ts`, `.../injuries/route.ts`.
+  - Migration scripts create contract triggers and stored procedures to maintain integrity and expiry events.
+
+- Dashboard & analytics
+  - Dashboard API: `src/app/api/dashboard/route.ts` and UI: `src/app/(app)/dashboard/page.tsx`.
+  - `src/lib/dashboard.ts` contains helper logic for aggregation queries and view generation.
+
+- Data import and sample datasets
+  - Transfermarkt CSV import helper: `src/scripts/import-transfermarkt.ts` and local `data-import/` sample CSV files.
+  - Seed scripts for football data and recruitment samples: `src/scripts/seed-football.ts`, `src/scripts/seed-recruitment.ts`.
+
+- Migration tooling
+  - Migration runner: `src/scripts/migrate.ts` executes SQL files in `src/db/migrations/` in filename order.
+
+- Misc utilities
+  - `src/lib/db.ts` — MySQL pool, parameterized query helpers, and transaction helpers.
+  - `src/lib/session.ts` — server-side session read/write helpers.
+  - `src/lib/player-detail.ts` — helper to assemble player details for UI/API consumption.
+
+## Files of note (quick index)
+
+- API routes: `src/app/api/**`
+- Frontend pages: `src/app/(app)/**` and `src/app/login/**`
+- DB migrations: `src/db/migrations/*.sql` (see filenames for full list)
+- Scripts: `src/scripts/*.ts` (migrate, seeds, rebuild-vectors, import)
+- Library helpers: `src/lib/*.ts`
+
+## Getting started (local development)
+
+Follow the steps in the previous Getting started section (install, copy `.env`, create DB, run migrations, run seeds, start dev server).
+
+## Development notes and troubleshooting
+
+- Importing Transfermarkt CSVs: the import script expects specific CSV columns; inspect `src/scripts/import-transfermarkt.ts` and the sample files in `data-import/`.
+- Qdrant: if you plan to use vector search, configure `QDRANT_URL` and `QDRANT_API_KEY` and run `src/scripts/rebuild-vectors.ts` after seeding players.
+- If you add migrations, increment the numeric prefix (e.g. `018_add_x.sql`) and run `npm run db:migrate`.
+
+## How I generated this feature list
+
+This README section was generated by scanning implemented routes, scripts,
+libraries and SQL migrations found under `src/`. For a more in-depth
+walkthrough of any feature, open the file referenced in the index above and
+I can extract or expand documentation for that specific area.
 
 ## Getting started (local development)
 
