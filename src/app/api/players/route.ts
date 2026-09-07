@@ -11,6 +11,7 @@ interface PlayerRow {
   primary_position: string;
   preferred_foot: string;
   height_cm: number | null;
+  photo_url: string | null;
   club_name: string | null;
   league_name: string | null;
   market_value: string | null;
@@ -190,7 +191,7 @@ export async function GET(request: NextRequest) {
   const sql = `
     SELECT
       p.player_id, p.first_name, p.last_name, p.date_of_birth, p.nationality,
-      p.primary_position, p.preferred_foot, p.height_cm,
+      p.primary_position, p.preferred_foot, p.height_cm, p.photo_url,
       cl.club_name, lg.league_name,
       lmv.market_value, ce.end_date AS contract_end,
       CASE WHEN av.player_id IS NULL THEN 'INJURED' ELSE 'AVAILABLE' END AS availability,

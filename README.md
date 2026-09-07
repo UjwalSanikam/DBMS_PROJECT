@@ -1,280 +1,271 @@
 # ScoutIQ
 
-ScoutIQ is a scouting and recruitment intelligence platform for football
-teams and scouts. This repository contains a working Phase 1+ implementation
-that includes authentication, a relational data model for players and
-football entities, a vector-index integration for similarity search, import
-and seed scripts, a simple admin UI, and a set of API endpoints and pages to
-support core scouting workflows.
+ScoutIQ is a database-driven football scouting and recruitment intelligence
+platform. It helps scouts identify players, compare performance, monitor
+contracts and injuries, write scouting reports, manage shortlists, and find
+statistically similar players.
 
-## Table of contents
+The project was developed for the DBMS Experiential Learning Level 3 project.
+It deliberately goes beyond basic CRUD by combining a relational database,
+advanced SQL features, role-based workflows, analytics, and vector similarity
+search in a functional web application.
 
-- Project overview
-- Architecture & key technologies
-- Getting started (local development)
-- Environment variables
-- Database: migrations & seeds
-- Important scripts
-- API & frontend summary
-- Development notes and troubleshooting
-- Contributing and pushing
-- License
+## Team
 
-## Project overview
+- Ujwal Sanikam
+- Ved Mudkavi
 
-The app implements the core pieces required to bootstrap a scouting tool:
+Course, section, USN, and instructor details should be added to
+[`docs/PROJECT_REPORT.md`](docs/PROJECT_REPORT.md) before submission.
 
-- User accounts with roles (admin, scout) and JWT-based session cookies.
-- Player entities, basic stats, contracts, injury records, and scout reports.
-- Admin pages for user management and basic data seeding utilities.
-- A similarity/vector index integration (Qdrant client hooks) and scripts to
-  rebuild vectors from DB data.
+## Main capabilities
 
-This is intended as a developer-focused repo for rapid iteration and local
-testing; production hardening, monitoring, and deployment automation are not
-included out of the box.
+- `ADMIN` and `SCOUT` authentication with hashed passwords and JWT cookies
+- Player search with football, performance, contract, valuation, and injury filters
+- Detailed player profiles and season statistics
+- Player comparison dashboard
+- Scout reports and personal shortlists
+- Contract, transfer, injury, and market-value management
+- Recruitment dashboards using joins, aggregation, views, and subqueries
+- Similar-player retrieval using normalized feature vectors stored in Qdrant
+- MySQL constraints, indexes, triggers, stored procedures, transactions, and an event
 
-## Architecture & key technologies
+## Technology stack
 
-- Next.js 16 (App Router) + React 19 + TypeScript
-- Tailwind CSS v4 for styling
-- MySQL (via `mysql2`) for primary relational storage
-- Auth: `bcryptjs` for password hashing and `jose` for signing JWTs
-- Validation: `zod`
-- Vector index: Qdrant (client present; vector rebuild script included)
+| Layer | Technology |
+| --- | --- |
+| Frontend | Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4 |
+| Backend/API | Next.js Route Handlers |
+| Relational database | MySQL through `mysql2` |
+| Vector database | Qdrant through `@qdrant/js-client-rest` |
+| Authentication | `bcryptjs`, `jose`, HTTP-only JWT cookie |
+| Validation | Zod plus MySQL constraints and triggers |
 
-See [package.json](package.json) for exact dependency versions.
+The exact package versions are defined in [`package.json`](package.json).
 
-## Exhaustive feature list (implemented)
+## Project documentation
 
-The following features are implemented in this repository. Pick the files
-noted below to inspect each feature's implementation.
+- [Project report](docs/PROJECT_REPORT.md)
+- [Requirements traceability](docs/REQUIREMENTS_TRACEABILITY.md)
+- [ER diagram](docs/ER_DIAGRAM.md)
+- [Relational schema](docs/RELATIONAL_SCHEMA.md)
+- [Data dictionary](docs/DATA_DICTIONARY.md)
+- [System architecture](docs/ARCHITECTURE.md)
+- [Important database queries](docs/IMPORTANT_QUERIES.md)
+- [API reference](docs/API_REFERENCE.md)
+- [Testing plan and results](docs/TESTING.md)
+- [Final demonstration guide](docs/DEMO_GUIDE.md)
 
-- Authentication & authorization
-  - Role-based users with `ADMIN` and `SCOUT` roles (`src/db/migrations/001_create_users.sql`).
-  - Password hashing with `bcryptjs` and JWT session cookies signed with `jose`.
-  - Login/logout and current-user endpoints: `src/app/api/auth/login/route.ts`, `src/app/api/auth/logout/route.ts`, `src/app/api/auth/me/route.ts`.
-  - Edge middleware protection: `src/middleware.ts`.
+## Prerequisites
 
-- Users / Admin
-  - Admin user management API: `src/app/api/admin/users/route.ts`.
-  - Admin UI for creating users: `src/app/(app)/admin/users/new-user-form.tsx` and admin users page.
-  - Seed script to create/update ADMIN user: `src/scripts/seed-admin.ts`.
+- Node.js 20 or later
+- npm
+- MySQL 8 or later
+- Qdrant, required for the similar-player feature
 
-- Players & football data model
-  - Player entities and core football tables via migrations in `src/db/migrations/` (players, clubs, competitions, player statistics, contracts, injuries, transfers, market value history, scout reports, shortlist, views, procedures, and triggers).
-  - Player list API: `src/app/api/players/route.ts`.
-  - Per-player endpoints for details, contracts, injuries, transfers, valuations, reports: `src/app/api/players/[id]/route.ts`, and subroutes under `src/app/api/players/[id]/*`.
-  - Player UI pages and components: `src/app/(app)/players/page.tsx`, `src/app/(app)/players/players-table.tsx`, `src/app/(app)/players/[id]/page.tsx`, `player-photo.tsx`, and `similar-players.tsx`.
+The application can run without a Qdrant API key when Qdrant is hosted locally.
 
-- Similarity / vector search
-  - Qdrant client helper and integrations: `src/lib/qdrant.ts`, `src/lib/similarity.ts`.
-  - Rebuild vectors script: `src/scripts/rebuild-vectors.ts`.
-  - API route to fetch similar players: `src/app/api/players/[id]/similar/route.ts`.
+## Local setup
 
-- Comparison, shortlist & reports
-  - Player comparison API: `src/app/api/players/compare/route.ts` and comparison UI: `src/app/(app)/compare/page.tsx`.
-  - Shortlist API and pages: `src/app/api/shortlist/route.ts`, `src/app/api/shortlist/[id]/route.ts`, and `src/app/(app)/shortlist/page.tsx`.
-  - Reports API and UI: `src/app/api/reports/route.ts`, `src/app/(app)/reports/page.tsx`.
-
-- Contracts / transfers / valuations / injuries
-  - Dedicated per-player endpoints to manage/view contracts, transfers, valuations, and injuries: `src/app/api/players/[id]/contracts/route.ts`, `.../transfers/route.ts`, `.../valuations/route.ts`, `.../injuries/route.ts`.
-  - Migration scripts create contract triggers and stored procedures to maintain integrity and expiry events.
-
-- Dashboard & analytics
-  - Dashboard API: `src/app/api/dashboard/route.ts` and UI: `src/app/(app)/dashboard/page.tsx`.
-  - `src/lib/dashboard.ts` contains helper logic for aggregation queries and view generation.
-
-- Data import and sample datasets
-  - Transfermarkt CSV import helper: `src/scripts/import-transfermarkt.ts` and local `data-import/` sample CSV files.
-  - Seed scripts for football data and recruitment samples: `src/scripts/seed-football.ts`, `src/scripts/seed-recruitment.ts`.
-
-- Migration tooling
-  - Migration runner: `src/scripts/migrate.ts` executes SQL files in `src/db/migrations/` in filename order.
-
-- Misc utilities
-  - `src/lib/db.ts` — MySQL pool, parameterized query helpers, and transaction helpers.
-  - `src/lib/session.ts` — server-side session read/write helpers.
-  - `src/lib/player-detail.ts` — helper to assemble player details for UI/API consumption.
-
-## Files of note (quick index)
-
-- API routes: `src/app/api/**`
-- Frontend pages: `src/app/(app)/**` and `src/app/login/**`
-- DB migrations: `src/db/migrations/*.sql` (see filenames for full list)
-- Scripts: `src/scripts/*.ts` (migrate, seeds, rebuild-vectors, import)
-- Library helpers: `src/lib/*.ts`
-
-## Getting started (local development)
-
-Follow the steps in the previous Getting started section (install, copy `.env`, create DB, run migrations, run seeds, start dev server).
-
-## Development notes and troubleshooting
-
-- Importing Transfermarkt CSVs: the import script expects specific CSV columns; inspect `src/scripts/import-transfermarkt.ts` and the sample files in `data-import/`.
-- Qdrant: if you plan to use vector search, configure `QDRANT_URL` and `QDRANT_API_KEY` and run `src/scripts/rebuild-vectors.ts` after seeding players.
-- If you add migrations, increment the numeric prefix (e.g. `018_add_x.sql`) and run `npm run db:migrate`.
-
-## How I generated this feature list
-
-This README section was generated by scanning implemented routes, scripts,
-libraries and SQL migrations found under `src/`. For a more in-depth
-walkthrough of any feature, open the file referenced in the index above and
-I can extract or expand documentation for that specific area.
-
-## Getting started (local development)
-
-Prerequisites:
-
-- Node.js 20+ and npm
-- A MySQL server accessible locally or remotely
-
-1. Install dependencies
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-2. Copy environment template and edit values
+`next-env.d.ts` is generated automatically by Next.js. Do not create or edit it
+manually.
+
+### 2. Create the MySQL database and application user
+
+Sign in to MySQL using an administrative account and run:
+
+```sql
+CREATE DATABASE IF NOT EXISTS scoutiq
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_general_ci;
+
+CREATE USER IF NOT EXISTS 'scoutiq_app'@'localhost'
+  IDENTIFIED BY 'replace_with_mysql_password';
+
+GRANT ALL PRIVILEGES ON scoutiq.* TO 'scoutiq_app'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+Use your actual local password instead of the placeholder. Do not place a real
+password in a tracked file.
+
+### 3. Configure environment variables
 
 ```bash
 cp .env.example .env
-# Edit values: DB_HOST, DB_USER, DB_PASSWORD, DB_DATABASE, AUTH_SECRET, etc.
 ```
 
-3. Create the database (example)
+Edit `.env` and set the following names exactly:
 
-```sql
-CREATE DATABASE scoutiq CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `MYSQL_HOST` | Yes | MySQL server host |
+| `MYSQL_PORT` | Yes | MySQL port, normally `3306` |
+| `MYSQL_DATABASE` | Yes | Database name, normally `scoutiq` |
+| `MYSQL_USER` | Yes | Application database user |
+| `MYSQL_PASSWORD` | Yes | Application database password |
+| `QDRANT_URL` | For similarity search | Qdrant endpoint, normally `http://localhost:6333` |
+| `QDRANT_API_KEY` | Hosted Qdrant only | Qdrant authentication key |
+| `AUTH_SECRET` | Yes | Secret used to sign session tokens |
+| `SEED_ADMIN_NAME` | Optional | Initial administrator name |
+| `SEED_ADMIN_EMAIL` | Optional | Initial administrator email |
+| `SEED_ADMIN_PASSWORD` | Recommended | Initial administrator password |
+
+Generate `AUTH_SECRET` with:
+
+```bash
+openssl rand -base64 32
 ```
 
-4. Run migrations and seed admin + sample data
+`.env` is ignored by Git. `.env.example` contains documentation placeholders
+only and is safe to include in the submission ZIP.
+
+### 4. Start Qdrant
+
+Run a local Qdrant server and confirm that it is available at the URL in
+`QDRANT_URL`. One Docker-based option is:
+
+```bash
+docker run --name scoutiq-qdrant -p 6333:6333 -p 6334:6334 qdrant/qdrant
+```
+
+If the container already exists, start it with:
+
+```bash
+docker start scoutiq-qdrant
+```
+
+### 5. Apply the database migrations
 
 ```bash
 npm run db:migrate
-npm run db:seed-admin
-npm run db:seed-football
 ```
 
-5. Start the dev server
+The migration runner reads only `src/db/migrations/*.sql`, in filename order,
+and records completed files in `schema_migrations`. This directory is the
+canonical database schema source. Root-level dumps are snapshots/reference
+files, not the normal setup path.
+
+The contract-expiry event requires the MySQL event scheduler. Check it with:
+
+```sql
+SHOW VARIABLES LIKE 'event_scheduler';
+```
+
+For a local demonstration, an administrator can enable it with:
+
+```sql
+SET GLOBAL event_scheduler = ON;
+```
+
+The views also exclude expired contracts defensively, so player search remains
+correct even when the event scheduler is unavailable.
+
+### 6. Seed demonstration data
+
+```bash
+npm run db:seed-admin
+npm run db:seed-football
+npm run db:seed-recruitment
+```
+
+For the larger Transfermarkt-derived sample dataset, use:
+
+```bash
+npm run import-transfermarkt
+```
+
+The import script reads the CSV files in `data-import/`.
+
+### 7. Build the vector index
+
+After player statistics have been seeded or imported:
+
+```bash
+npm run rebuild-vectors
+```
+
+This creates the Qdrant collection `player_profiles` and stores one normalized
+10-dimensional playing-style vector per eligible player. Players require at
+least 450 minutes in season `2025-2026` to be included.
+
+### 8. Run the application
 
 ```bash
 npm run dev
 ```
 
-Open http://localhost:3000 and sign in via the login page (`/login`).
+Open [http://localhost:3000](http://localhost:3000) and sign in using the
+administrator credentials configured in `.env`.
 
-## Environment variables
+## Available commands
 
-- `DB_HOST` — MySQL host (defaults may be `localhost`).
-- `DB_PORT` — MySQL port (usually `3306`).
-- `DB_USER` — Database user.
-- `DB_PASSWORD` — Database password.
-- `DB_DATABASE` — Database name (e.g., `scoutiq`).
-- `AUTH_SECRET` — Secret used to sign JWTs.
-- `QDRANT_URL` — Optional: Qdrant endpoint for vector indexing.
-- `QDRANT_API_KEY` — Optional: key for Qdrant if configured.
-- `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` — Optional credentials used
-  by the admin seed script.
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the development server |
+| `npm run build` | Create a production build |
+| `npm run start` | Run a completed production build |
+| `npm run lint` | Run ESLint |
+| `npm run db:migrate` | Apply pending MySQL migrations |
+| `npm run db:seed-admin` | Create or update the initial admin user |
+| `npm run db:seed-football` | Insert core sample football records |
+| `npm run db:seed-recruitment` | Insert recruitment workflow samples |
+| `npm run import-transfermarkt` | Import the supplied filtered CSV data |
+| `npm run rebuild-vectors` | Rebuild the Qdrant player-vector collection |
 
-Adjust `.env` as needed before running migrations/seeds.
+## Main pages
 
-## Database: migrations & seeds
+| Route | Purpose |
+| --- | --- |
+| `/login` | Authentication |
+| `/dashboard` | Recruitment summaries and alerts |
+| `/players` | Search and filter player records |
+| `/players/[id]` | Player profile and related history |
+| `/compare` | Side-by-side player comparison |
+| `/shortlist` | Scout-specific recruitment shortlist |
+| `/reports` | Scouting report history |
+| `/admin/users` | Administrator user management |
 
-- Migration SQL files live in `src/db/migrations/`. The migration runner
-  (`src/scripts/migrate.ts`) applies files in lexicographic order.
-- Seed scripts are available in `src/scripts/` and include admin and sample
-  football data seeds.
+## Security and integrity
 
-Common commands:
+- Passwords are hashed using bcrypt before storage.
+- Authentication tokens are signed using `AUTH_SECRET` and stored in HTTP-only cookies.
+- Protected routes validate the session; administrator operations also validate the role.
+- SQL input is passed using parameterized placeholders.
+- Zod validates request data before database operations.
+- Foreign keys, unique constraints, check constraints, triggers, and transactions protect database integrity.
+- Real credentials belong only in `.env` and must not be included in the ZIP.
 
-- `npm run db:migrate` — apply DB migrations.
-- `npm run db:seed-admin` — create or update the ADMIN user from env vars.
-- `npm run db:seed-football` — seed sample clubs/players/contracts/etc.
+## Submission ZIP checklist
 
-If you change the DB schema, add a new SQL file in
-`src/db/migrations/` with a sequential prefix (e.g. `015_my_change.sql`).
+Before creating the final ZIP:
 
-## Important scripts
+1. Complete all placeholders in `docs/PROJECT_REPORT.md` and `docs/TESTING.md`.
+2. Add final application screenshots under `docs/screenshots/` and reference them from the report.
+3. Run all test steps in `docs/TESTING.md` and record the actual results.
+4. Confirm that `.env`, `.next/`, `node_modules/`, and database credentials are excluded.
+5. Include `.env.example`, source code, migrations, documentation, and any permitted sample data.
+6. Extract the ZIP into a clean folder and repeat the setup instructions once before submission.
 
-From `package.json`:
+## Troubleshooting
 
-- `dev` — `next dev` (start development server)
-- `build` — `next build` (build production assets)
-- `start` — `next start` (start production server)
-- `lint` — run ESLint
-- `db:migrate` — runs `src/scripts/migrate.ts`
-- `db:seed-admin` — runs `src/scripts/seed-admin.ts`
-- `db:seed-football` — runs `src/scripts/seed-football.ts`
-- `db:seed-recruitment` — additional recruitment-specific seed
-- `rebuild-vectors` — rebuilds Qdrant vectors from DB data
+- **MySQL access denied:** confirm the `MYSQL_*` values and the grant for `scoutiq_app`.
+- **Unknown database:** create `scoutiq` before running migrations.
+- **Qdrant connection refused:** start Qdrant and confirm `QDRANT_URL`.
+- **No similar players:** seed/import statistics, ensure players have at least 450 minutes, then run `npm run rebuild-vectors`.
+- **Migration already applied:** the runner skips filenames recorded in `schema_migrations`.
+- **Scheduled contract expiry does not run:** enable MySQL's `event_scheduler`, or demonstrate the defensive expiry view.
 
-Use `npm run <script>` to run each helper.
+## Scope limitations and future work
 
-## API & frontend summary
-
-- API routes are implemented under `src/app/api/` using Next.js route handlers.
-  Examples:
-  - `src/app/api/auth/login/route.ts` — login
-  - `src/app/api/auth/logout/route.ts` — logout
-  - `src/app/api/auth/me/route.ts` — current user
-  - `src/app/api/players/route.ts` — players list
-  - `src/app/api/players/[id]/route.ts` — per-player subroutes
-
-- The main app UI is located in `src/app/(app)/` and includes dashboard,
-  players, comparison, shortlist and reports pages.
-
-## Development notes and troubleshooting
-
-- If migrations fail, inspect `src/db/migrations/` SQL files for ordering
-  or SQL errors. The migration script executes files in filename order.
-- For DB connection issues, validate the `.env` values and that MySQL is
-  reachable from your environment.
-- If push/pull from GitHub requires authentication, configure a remote
-  using HTTPS with a personal access token or set up SSH keys.
-
-Common troubleshooting commands:
-
-```bash
-# check repo status
-git status
-# view remotes
-git remote -v
-```
-
-## Contributing & pushing changes
-
-- Work on feature branches, commit logically, and open a PR for review.
-- To push your current branch to GitHub (example HTTPS remote):
-
-```bash
-git remote add origin https://github.com/UjwalSanikam/DBMS_PROJECT.git
-git push -u origin $(git rev-parse --abbrev-ref HEAD)
-```
-
-- If `origin` already exists and needs updating:
-
-```bash
-git remote set-url origin <url>
-```
-
-Note: pushing to a remote may require credentials. For CI-friendly
-workflows prefer using SSH keys or a GitHub personal access token.
-
-## Deployment
-
-This repo is not prescriptive about hosting. For production deploys, build
-the Next.js app (`npm run build`) and host using a Node process or a
-platform with Next.js support (Vercel, Fly, Render, etc.). Ensure your DB
-and Qdrant endpoints are accessible from the host and env vars are set.
-
-## License
-
-This project does not include a license file. Add a `LICENSE` file to make
-licensing clear for contributors and users.
-
----
-
-If you want, I can commit this README change and push it to your configured
-GitHub remote. Reply to confirm and provide the remote URL if you'd like
-me to set or change it before pushing.
+ScoutIQ is an academic prototype. It does not provide live match feeds,
+automated data licensing, production deployment, payment processing, or club
+communication. Proposed extensions include multi-season vector indexes,
+position-specific feature weighting, richer audit history, notifications, and
+production monitoring.

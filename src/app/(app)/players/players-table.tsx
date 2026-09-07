@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import PlayerAvatar from "@/components/player-avatar";
 
 interface Player {
   player_id: number;
@@ -12,6 +13,7 @@ interface Player {
   primary_position: string;
   preferred_foot: string;
   height_cm: number | null;
+  photo_url: string | null;
   club_name: string | null;
   league_name: string | null;
   market_value: string | null;
@@ -21,18 +23,14 @@ interface Player {
   assists: number | null;
 }
 
-const POSITIONS = [
-  "GK", "CB", "LB", "RB", "LWB", "RWB", "DM", "CM", "AM", "LW", "RW", "ST",
-];
+const POSITIONS = ["GK", "CB", "LB", "RB", "LWB", "RWB", "DM", "CM", "AM", "LW", "RW", "ST"];
 
 function calculateAge(dateOfBirth: string): number {
   const dob = new Date(dateOfBirth);
   const today = new Date();
   let age = today.getFullYear() - dob.getFullYear();
   const monthDiff = today.getMonth() - dob.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-    age--;
-  }
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
   return age;
 }
 
@@ -45,30 +43,21 @@ function formatCurrency(value: string | null): string {
 }
 
 export default function PlayersTable() {
-  const router = useRouter();
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
-
-  // Basic
   const [name, setName] = useState("");
   const [position, setPosition] = useState("");
   const [nationality, setNationality] = useState("");
   const [ageMin, setAgeMin] = useState("");
   const [ageMax, setAgeMax] = useState("");
-
-  // Performance
   const [minGoals, setMinGoals] = useState("");
   const [minAssists, setMinAssists] = useState("");
   const [minAppearances, setMinAppearances] = useState("");
   const [minPassAccuracy, setMinPassAccuracy] = useState("");
-
-  // Recruitment
   const [maxMarketValue, setMaxMarketValue] = useState("");
   const [maxContractMonths, setMaxContractMonths] = useState("");
-
-  // Fitness
   const [availableOnly, setAvailableOnly] = useState(false);
 
   const fetchPlayers = useCallback(async () => {
@@ -91,7 +80,6 @@ export default function PlayersTable() {
 
       const res = await fetch(`/api/players?${params.toString()}`);
       const data = await res.json();
-
       if (!res.ok) {
         setError(data.error ?? "Could not load players.");
         return;
@@ -102,11 +90,7 @@ export default function PlayersTable() {
     } finally {
       setLoading(false);
     }
-  }, [
-    name, position, nationality, ageMin, ageMax,
-    minGoals, minAssists, minAppearances, minPassAccuracy,
-    maxMarketValue, maxContractMonths, availableOnly,
-  ]);
+  }, [name, position, nationality, ageMin, ageMax, minGoals, minAssists, minAppearances, minPassAccuracy, maxMarketValue, maxContractMonths, availableOnly]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -114,12 +98,10 @@ export default function PlayersTable() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleSearchSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    fetchPlayers();
-  }
-
-  function handleClearAdvanced() {
+  function clearAll() {
+    setName("");
+    setPosition("");
+    setNationality("");
     setAgeMin("");
     setAgeMax("");
     setMinGoals("");
@@ -131,246 +113,123 @@ export default function PlayersTable() {
     setAvailableOnly(false);
   }
 
-  const inputClass =
-    "rounded-md border border-border bg-pitch-900 px-3 py-2 text-sm outline-none focus:border-accent focus:ring-1 focus:ring-accent";
+  const inputClass = "rounded-xl border border-white/[0.08] bg-pitch-950/65 px-3.5 py-2.5 text-sm text-text-primary outline-none transition placeholder:text-text-faint hover:border-white/[0.13] focus:border-accent/60 focus:ring-2 focus:ring-accent/10";
 
   return (
     <div>
       <form
-        onSubmit={handleSearchSubmit}
-        className="rounded-lg border border-border-soft bg-surface p-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          fetchPlayers();
+        }}
+        className="rounded-2xl border border-white/[0.07] bg-surface/80 p-4 shadow-[0_20px_70px_rgba(0,0,0,0.14)] backdrop-blur sm:p-5"
       >
-        <div className="flex flex-wrap gap-3">
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Search by name…"
-            className={`flex-1 min-w-[180px] ${inputClass}`}
-          />
-          <select
-            value={position}
-            onChange={(e) => setPosition(e.target.value)}
-            className={inputClass}
-          >
-            <option value="">Any position</option>
-            {POSITIONS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
+        <div className="flex flex-col gap-3 lg:flex-row">
+          <label className="relative min-w-0 flex-1">
+            <span className="sr-only">Search by player name</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-faint" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" />
+            </svg>
+            <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Search player name…" className={`w-full pl-10 ${inputClass}`} />
+          </label>
+          <select aria-label="Filter by position" value={position} onChange={(event) => setPosition(event.target.value)} className={`lg:w-44 ${inputClass}`}>
+            <option value="">All positions</option>
+            {POSITIONS.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
-          <input
-            value={nationality}
-            onChange={(e) => setNationality(e.target.value)}
-            placeholder="Nationality…"
-            className={`w-40 ${inputClass}`}
-          />
-          <button
-            type="submit"
-            className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-pitch-950 transition hover:opacity-90"
-          >
-            Search
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowAdvanced((v) => !v)}
-            className="rounded-md border border-border-soft px-4 py-2 text-sm font-medium text-text-primary transition hover:bg-surface-raised"
-          >
-            {showAdvanced ? "Hide advanced filters" : "Advanced filters"}
+          <input aria-label="Filter by nationality" value={nationality} onChange={(event) => setNationality(event.target.value)} placeholder="Nationality" className={`lg:w-44 ${inputClass}`} />
+          <button type="submit" className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-pitch-950 shadow-[0_10px_25px_rgba(61,220,132,0.16)] transition hover:bg-[#55e596]">Search database</button>
+          <button type="button" onClick={() => setShowAdvanced((value) => !value)} className="rounded-xl border border-white/[0.09] px-4 py-2.5 text-sm font-semibold text-text-primary transition hover:bg-white/[0.05]">
+            {showAdvanced ? "Less filters" : "More filters"}
           </button>
         </div>
 
         {showAdvanced && (
-          <div className="mt-4 border-t border-border-soft pt-4 space-y-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">
-                Basic
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <input
-                  type="number"
-                  value={ageMin}
-                  onChange={(e) => setAgeMin(e.target.value)}
-                  placeholder="Age min"
-                  className={`w-28 ${inputClass}`}
-                />
-                <input
-                  type="number"
-                  value={ageMax}
-                  onChange={(e) => setAgeMax(e.target.value)}
-                  placeholder="Age max"
-                  className={`w-28 ${inputClass}`}
-                />
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">
-                Performance
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <input
-                  type="number"
-                  value={minGoals}
-                  onChange={(e) => setMinGoals(e.target.value)}
-                  placeholder="Min goals"
-                  className={`w-32 ${inputClass}`}
-                />
-                <input
-                  type="number"
-                  value={minAssists}
-                  onChange={(e) => setMinAssists(e.target.value)}
-                  placeholder="Min assists"
-                  className={`w-32 ${inputClass}`}
-                />
-                <input
-                  type="number"
-                  value={minAppearances}
-                  onChange={(e) => setMinAppearances(e.target.value)}
-                  placeholder="Min appearances"
-                  className={`w-36 ${inputClass}`}
-                />
-                <input
-                  type="number"
-                  value={minPassAccuracy}
-                  onChange={(e) => setMinPassAccuracy(e.target.value)}
-                  placeholder="Min pass accuracy %"
-                  className={`w-40 ${inputClass}`}
-                />
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">
-                Recruitment
-              </p>
-              <div className="flex flex-wrap gap-3">
-                <input
-                  type="number"
-                  value={maxMarketValue}
-                  onChange={(e) => setMaxMarketValue(e.target.value)}
-                  placeholder="Max market value (€)"
-                  className={`w-48 ${inputClass}`}
-                />
-                <input
-                  type="number"
-                  value={maxContractMonths}
-                  onChange={(e) => setMaxContractMonths(e.target.value)}
-                  placeholder="Contract expires within (months)"
-                  className={`w-56 ${inputClass}`}
-                />
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-2">
-                Fitness
-              </p>
-              <label className="flex items-center gap-2 text-sm text-text-primary">
-                <input
-                  type="checkbox"
-                  checked={availableOnly}
-                  onChange={(e) => setAvailableOnly(e.target.checked)}
-                />
-                Available only
+          <div className="mt-5 grid gap-5 border-t border-white/[0.06] pt-5 md:grid-cols-2 xl:grid-cols-4">
+            <FilterGroup label="Profile">
+              <input type="number" value={ageMin} onChange={(event) => setAgeMin(event.target.value)} placeholder="Min age" className={`min-w-0 flex-1 ${inputClass}`} />
+              <input type="number" value={ageMax} onChange={(event) => setAgeMax(event.target.value)} placeholder="Max age" className={`min-w-0 flex-1 ${inputClass}`} />
+            </FilterGroup>
+            <FilterGroup label="Performance">
+              <input type="number" value={minGoals} onChange={(event) => setMinGoals(event.target.value)} placeholder="Min goals" className={`min-w-0 flex-1 ${inputClass}`} />
+              <input type="number" value={minAssists} onChange={(event) => setMinAssists(event.target.value)} placeholder="Min assists" className={`min-w-0 flex-1 ${inputClass}`} />
+            </FilterGroup>
+            <FilterGroup label="Playing time">
+              <input type="number" value={minAppearances} onChange={(event) => setMinAppearances(event.target.value)} placeholder="Min apps" className={`min-w-0 flex-1 ${inputClass}`} />
+              <input type="number" value={minPassAccuracy} onChange={(event) => setMinPassAccuracy(event.target.value)} placeholder="Pass %" className={`min-w-0 flex-1 ${inputClass}`} />
+            </FilterGroup>
+            <FilterGroup label="Recruitment">
+              <input type="number" value={maxMarketValue} onChange={(event) => setMaxMarketValue(event.target.value)} placeholder="Max value €" className={`min-w-0 flex-1 ${inputClass}`} />
+              <input type="number" value={maxContractMonths} onChange={(event) => setMaxContractMonths(event.target.value)} placeholder="Expiry mo." className={`min-w-0 flex-1 ${inputClass}`} />
+            </FilterGroup>
+            <div className="flex flex-wrap items-center gap-4 md:col-span-2 xl:col-span-4">
+              <label className="flex items-center gap-2 text-sm font-medium text-text-primary">
+                <input type="checkbox" checked={availableOnly} onChange={(event) => setAvailableOnly(event.target.checked)} className="h-4 w-4 accent-[#3ddc84]" />
+                Available players only
               </label>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-pitch-950 transition hover:opacity-90"
-              >
-                Apply filters
-              </button>
-              <button
-                type="button"
-                onClick={handleClearAdvanced}
-                className="rounded-md border border-border-soft px-4 py-2 text-sm text-text-muted transition hover:bg-surface-raised"
-              >
-                Clear advanced filters
-              </button>
+              <button type="button" onClick={clearAll} className="text-xs font-semibold text-text-muted hover:text-white">Clear all filters</button>
             </div>
           </div>
         )}
       </form>
 
-      {error && (
-        <p
-          role="alert"
-          className="mt-4 rounded-md border border-danger/40 bg-danger-soft px-3 py-2 text-sm text-danger"
-        >
-          {error}
-        </p>
-      )}
-
-      <div className="mt-4 rounded-lg border border-border-soft bg-surface overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border-soft text-left text-xs uppercase tracking-wide text-text-muted">
-              <th className="px-4 py-3 font-medium">Player</th>
-              <th className="px-4 py-3 font-medium">Age</th>
-              <th className="px-4 py-3 font-medium">Position</th>
-              <th className="px-4 py-3 font-medium">Nationality</th>
-              <th className="px-4 py-3 font-medium">Club</th>
-              <th className="px-4 py-3 font-medium">Goals</th>
-              <th className="px-4 py-3 font-medium">Assists</th>
-              <th className="px-4 py-3 font-medium">Market value</th>
-              <th className="px-4 py-3 font-medium">Fitness</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
-              <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-text-muted">
-                  Loading players…
-                </td>
-              </tr>
-            )}
-            {!loading && players.length === 0 && !error && (
-              <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-text-muted">
-                  No players match that search.
-                </td>
-              </tr>
-            )}
-            {!loading &&
-              players.map((p) => (
-                <tr
-                  key={p.player_id}
-                  className="border-b border-border-soft last:border-0 hover:bg-surface-raised transition cursor-pointer"
-                  onClick={() => router.push(`/players/${p.player_id}`)}
-                >
-                  <td className="px-4 py-3 text-text-primary font-medium">
-                    {p.first_name} {p.last_name}
-                  </td>
-                  <td className="px-4 py-3 stat-figure text-text-muted">
-                    {calculateAge(p.date_of_birth)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent">
-                      {p.primary_position}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-text-muted">{p.nationality}</td>
-                  <td className="px-4 py-3 text-text-muted">{p.club_name ?? "—"}</td>
-                  <td className="px-4 py-3 stat-figure text-text-muted">{p.goals ?? "—"}</td>
-                  <td className="px-4 py-3 stat-figure text-text-muted">{p.assists ?? "—"}</td>
-                  <td className="px-4 py-3 stat-figure text-text-muted">
-                    {formatCurrency(p.market_value)}
-                  </td>
-                  <td className="px-4 py-3">
-                    {p.availability === "AVAILABLE" ? (
-                      <span className="text-success text-xs">🟢 Available</span>
-                    ) : (
-                      <span className="text-danger text-xs">🔴 Injured</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+      <div className="mt-5 flex items-center justify-between">
+        <p className="text-xs text-text-muted"><span className="stat-figure font-semibold text-text-primary">{loading ? "—" : players.length}</span> players found</p>
+        <p className="hidden text-[10px] font-semibold uppercase tracking-[0.18em] text-text-faint sm:block">2025/26 performance data</p>
       </div>
+
+      {error && <p role="alert" className="mt-4 rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-danger">{error}</p>}
+
+      {loading ? (
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, index) => <div key={index} className="h-52 animate-pulse rounded-2xl border border-white/[0.05] bg-surface/60" />)}
+        </div>
+      ) : players.length === 0 && !error ? (
+        <div className="mt-4 rounded-2xl border border-dashed border-white/[0.1] bg-surface/40 py-16 text-center">
+          <p className="font-display text-lg font-semibold text-text-primary">No matching players</p>
+          <p className="mt-1 text-sm text-text-muted">Try widening your filters.</p>
+        </div>
+      ) : (
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {players.map((player) => (
+            <Link key={player.player_id} href={`/players/${player.player_id}`} className="group overflow-hidden rounded-2xl border border-white/[0.07] bg-surface/80 p-4 shadow-[0_16px_50px_rgba(0,0,0,0.12)] transition hover:-translate-y-1 hover:border-accent/25 hover:bg-surface-raised/90 hover:shadow-[0_22px_60px_rgba(0,0,0,0.22)]">
+              <div className="flex items-start gap-3.5">
+                <PlayerAvatar playerId={player.player_id} firstName={player.first_name} lastName={player.last_name} photoUrl={player.photo_url} className="w-[72px] rounded-2xl" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h2 className="truncate font-display text-base font-semibold text-white transition group-hover:text-accent">{player.first_name} {player.last_name}</h2>
+                      <p className="mt-1 truncate text-xs text-text-muted">{player.club_name ?? "Free agent"}</p>
+                    </div>
+                    <span className="rounded-lg border border-accent/20 bg-accent/10 px-2 py-1 text-[10px] font-bold text-accent">{player.primary_position}</span>
+                  </div>
+                  <p className="mt-3 text-[11px] text-text-faint">{player.nationality} · {calculateAge(player.date_of_birth)} yrs</p>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-3 divide-x divide-white/[0.06] rounded-xl bg-pitch-950/45 py-2.5 text-center">
+                <div><p className="stat-figure text-sm font-semibold text-white">{player.goals ?? "—"}</p><p className="text-[9px] uppercase tracking-wider text-text-faint">Goals</p></div>
+                <div><p className="stat-figure text-sm font-semibold text-white">{player.assists ?? "—"}</p><p className="text-[9px] uppercase tracking-wider text-text-faint">Assists</p></div>
+                <div><p className="stat-figure text-sm font-semibold text-white">{formatCurrency(player.market_value)}</p><p className="text-[9px] uppercase tracking-wider text-text-faint">Value</p></div>
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider ${player.availability === "AVAILABLE" ? "text-accent" : "text-danger"}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${player.availability === "AVAILABLE" ? "bg-accent" : "bg-danger"}`} />
+                  {player.availability === "AVAILABLE" ? "Available" : "Injured"}
+                </span>
+                <span className="text-[11px] font-semibold text-text-muted transition group-hover:text-white">Open profile →</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FilterGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-text-faint">{label}</p>
+      <div className="flex gap-2">{children}</div>
     </div>
   );
 }

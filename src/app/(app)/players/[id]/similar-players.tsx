@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import PlayerAvatar from "@/components/player-avatar";
 
 interface SimilarPlayer {
   player_id: number;
@@ -79,11 +80,12 @@ export default function SimilarPlayers({ playerId }: { playerId: number }) {
           {results.map((p) => (
             <li
               key={p.player_id}
-              className="flex items-center justify-between border-b border-border-soft pb-2 last:border-0"
+              className="flex items-center gap-3 border-b border-border-soft pb-2 last:border-0"
             >
+              <PlayerAvatar playerId={p.player_id} className="w-9" />
               <Link
                 href={`/players/${p.player_id}`}
-                className="text-sm font-medium text-text-primary hover:text-accent"
+                className="min-w-0 flex-1 truncate text-sm font-medium text-text-primary hover:text-accent"
               >
                 {p.player_name}
               </Link>

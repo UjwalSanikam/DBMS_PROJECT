@@ -109,6 +109,7 @@ export async function getFullPlayerDetail(
     `SELECT
        p.player_id, p.first_name, p.last_name, p.date_of_birth, p.nationality,
        p.primary_position, p.secondary_position, p.preferred_foot, p.height_cm,
+       p.photo_url,
        pc.club_id, cl.club_name, lg.league_name,
        lmv.market_value, ce.end_date AS contract_end,
        CASE WHEN av.player_id IS NULL THEN 'INJURED' ELSE 'AVAILABLE' END AS availability,

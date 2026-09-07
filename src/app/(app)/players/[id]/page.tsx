@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getFullPlayerDetail } from "@/lib/player-detail";
+import PlayerAvatar from "@/components/player-avatar";
 import SimilarPlayers from "./similar-players";
-import PlayerPhoto from "./player-photo";
 
 function calculateAge(dob: string): number {
   const d = new Date(dob);
@@ -41,29 +41,46 @@ export default async function PlayerDetailPage({
   const detail = await getFullPlayerDetail(playerId);
   if (!detail) notFound();
 
-  const { player, latestSeasonStats, injuries, contracts, transfers, valuations, reports } =
+  const { player, latestSeasonStats, injuries, transfers, valuations, reports } =
     detail;
 
   return (
     <div>
-      <div className="flex items-start gap-4">
-        <PlayerPhoto
+      <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[radial-gradient(circle_at_85%_20%,rgba(61,220,132,0.13),transparent_35%),linear-gradient(135deg,rgba(23,35,59,0.96),rgba(7,12,22,0.96))] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:p-7">
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+        <PlayerAvatar
+          playerId={player.player_id}
           photoUrl={player.photo_url}
           firstName={player.first_name}
           lastName={player.last_name}
+          className="w-28 rounded-2xl border border-white/10 shadow-2xl sm:w-32"
         />
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-text-muted">
-            Player profile
-          </p>
-          <h1 className="mt-1 font-display text-2xl font-semibold">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent">Player intelligence profile</p>
+            <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${player.availability === "AVAILABLE" ? "bg-accent/10 text-accent" : "bg-danger/10 text-danger"}`}>
+              {player.availability}
+            </span>
+          </div>
+          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             {player.first_name} {player.last_name}
           </h1>
-          <p className="mt-1.5 text-sm text-text-muted">
-            {player.primary_position}
+          <p className="mt-2 text-sm text-text-muted">
+            <span className="font-semibold text-text-primary">{player.primary_position}
             {player.secondary_position ? ` / ${player.secondary_position}` : ""} ·{" "}
-            {player.club_name ?? "Free agent"} · {player.league_name ?? "—"}
+            </span>{player.club_name ?? "Free agent"} · {player.league_name ?? "—"}
           </p>
+          <div className="mt-4 flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+            <span className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5">{player.nationality}</span>
+            <span className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5">{calculateAge(player.date_of_birth)} years</span>
+            <span className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 py-1.5">{player.preferred_foot} foot</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:w-52">
+          <div className="rounded-xl border border-white/[0.08] bg-pitch-950/40 p-3 text-center"><p className="stat-figure text-lg font-semibold text-white">{formatCurrency(player.market_value)}</p><p className="text-[9px] uppercase tracking-wider text-text-faint">Market value</p></div>
+          <div className="rounded-xl border border-white/[0.08] bg-pitch-950/40 p-3 text-center"><p className="stat-figure text-lg font-semibold text-white">{latestSeasonStats?.appearances ?? "—"}</p><p className="text-[9px] uppercase tracking-wider text-text-faint">Apps</p></div>
+        </div>
         </div>
       </div>
 

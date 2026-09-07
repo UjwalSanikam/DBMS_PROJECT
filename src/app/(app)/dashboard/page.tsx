@@ -1,6 +1,7 @@
+import Link from "next/link";
+import PlayerAvatar from "@/components/player-avatar";
 import { getSession } from "@/lib/session";
 import { getDashboardSummary } from "@/lib/dashboard";
- 
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -11,183 +12,180 @@ function formatDate(value: string | null): string {
   });
 }
 
-export default async function DashboardPage() {
-  const [session, summary] = await Promise.all([
-    getSession(),
-    getDashboardSummary(),
-  ]);
+const STAT_META = [
+  { key: "playersTracked", label: "Players tracked", detail: "Global database", tone: "text-sky-300", dot: "bg-sky-300" },
+  { key: "availablePlayers", label: "Match ready", detail: "Available now", tone: "text-accent", dot: "bg-accent" },
+  { key: "currentlyInjured", label: "In recovery", detail: "Active injuries", tone: "text-danger", dot: "bg-danger" },
+  { key: "shortlisted", label: "On shortlist", detail: "Priority targets", tone: "text-warning", dot: "bg-warning" },
+  { key: "scoutReports", label: "Scout reports", detail: "Knowledge base", tone: "text-violet-300", dot: "bg-violet-300" },
+] as const;
 
-  const STAT_CARDS = [
-    { label: "Players tracked", value: summary.cards.playersTracked },
-    { label: "Available players", value: summary.cards.availablePlayers },
-    { label: "Currently injured", value: summary.cards.currentlyInjured },
-    { label: "Shortlisted", value: summary.cards.shortlisted },
-    { label: "Scout reports", value: summary.cards.scoutReports },
-  ];
+const recommendationTone: Record<string, string> = {
+  PRIORITY: "border-accent/20 bg-accent/10 text-accent",
+  SHORTLIST: "border-sky-300/20 bg-sky-300/10 text-sky-300",
+  MONITOR: "border-warning/20 bg-warning/10 text-warning",
+  AVOID: "border-danger/20 bg-danger/10 text-danger",
+};
+
+export default async function DashboardPage() {
+  const [session, summary] = await Promise.all([getSession(), getDashboardSummary()]);
+  const firstName = session?.fullName.split(" ")[0] ?? "Scout";
+  const today = new Intl.DateTimeFormat("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date());
 
   return (
     <div>
-      <p className="text-xs font-medium uppercase tracking-wide text-text-muted">
-        Overview
-      </p>
-      <h1 className="mt-1 font-display text-2xl font-semibold">
-        Welcome back{session ? `, ${session.fullName.split(" ")[0]}` : ""}
-      </h1>
-      <p className="mt-1.5 text-sm text-text-muted max-w-xl">
-        A snapshot of your club&apos;s recruitment activity.
-      </p>
+      <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-text-muted">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_12px_rgba(61,220,132,0.8)]" />
+            Live recruitment overview
+          </div>
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            Good evening, {firstName}.
+          </h1>
+          <p className="mt-2 text-sm text-text-muted">{today} · Your scouting operation at a glance</p>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/compare" className="rounded-xl border border-white/[0.09] bg-white/[0.035] px-4 py-2.5 text-sm font-semibold text-text-primary transition hover:bg-white/[0.07]">
+            Compare players
+          </Link>
+          <Link href="/players" className="rounded-xl bg-accent px-4 py-2.5 text-sm font-bold text-pitch-950 shadow-[0_10px_30px_rgba(61,220,132,0.18)] transition hover:-translate-y-0.5 hover:bg-[#55e596]">
+            Find a player
+          </Link>
+        </div>
+      </header>
 
-      <div className="mt-8 grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {STAT_CARDS.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-lg border border-border-soft bg-surface p-4"
-          >
-            <p className="stat-figure text-2xl font-semibold text-text-primary">
-              {card.value}
+      <section className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5" aria-label="Recruitment metrics">
+        {STAT_META.map((meta) => (
+          <div key={meta.key} className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-surface/80 p-4 shadow-[0_16px_50px_rgba(0,0,0,0.12)] backdrop-blur transition hover:-translate-y-0.5 hover:border-white/[0.13] hover:bg-surface-raised/80 sm:p-5">
+            <div className="flex items-start justify-between">
+              <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-text-faint">2025/26</span>
+            </div>
+            <p className={`stat-figure mt-5 text-3xl font-semibold tracking-tight ${meta.tone}`}>
+              {summary.cards[meta.key]}
             </p>
-            <p className="mt-1 text-xs text-text-muted">{card.label}</p>
+            <p className="mt-1 text-sm font-semibold text-text-primary">{meta.label}</p>
+            <p className="mt-0.5 text-[11px] text-text-muted">{meta.detail}</p>
           </div>
         ))}
-      </div>
+      </section>
 
-      {summary.injuredShortlisted.length > 0 && (
-        <div className="mt-8 rounded-lg border border-danger/40 bg-danger-soft p-4">
-          <h2 className="font-display text-sm font-semibold text-danger">
-            ⚠ Shortlisted players currently injured
-          </h2>
-          <ul className="mt-3 space-y-2">
+      <section className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(330px,0.75fr)]">
+        <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-surface/80 shadow-[0_20px_70px_rgba(0,0,0,0.16)] backdrop-blur">
+          <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4 sm:px-6">
+            <div>
+              <h2 className="font-display text-lg font-semibold text-white">Latest scout intelligence</h2>
+              <p className="mt-0.5 text-xs text-text-muted">Recent reports from across the network</p>
+            </div>
+            <Link href="/reports" className="text-xs font-semibold text-accent hover:text-white">View all →</Link>
+          </div>
+          <div className="divide-y divide-white/[0.055]">
+            {summary.recentReports.length === 0 && <p className="px-6 py-8 text-sm text-text-muted">No reports yet.</p>}
+            {summary.recentReports.map((report) => (
+              <Link key={report.report_id} href={`/players/${report.player_id}`} className="flex items-center gap-3 px-5 py-3.5 transition hover:bg-white/[0.035] sm:px-6">
+                <PlayerAvatar playerId={report.player_id} className="w-11" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-text-primary">{report.player_name}</p>
+                  <p className="mt-0.5 truncate text-xs text-text-muted">Scouted by {report.scout_name}</p>
+                </div>
+                <span className={`hidden rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wide sm:inline-flex ${recommendationTone[report.recommendation] ?? "border-white/10 text-text-muted"}`}>
+                  {report.recommendation}
+                </span>
+                <div className="w-12 text-right">
+                  <p className="stat-figure text-lg font-semibold text-white">{Number(report.overall_rating).toFixed(1)}</p>
+                  <p className="text-[9px] uppercase tracking-wider text-text-faint">rating</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-white/[0.07] bg-surface/80 p-5 shadow-[0_20px_70px_rgba(0,0,0,0.16)] backdrop-blur sm:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-display text-lg font-semibold text-white">Top targets</h2>
+              <p className="mt-0.5 text-xs text-text-muted">Ranked by scout rating</p>
+            </div>
+            <span className="rounded-lg bg-accent/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-accent">Live</span>
+          </div>
+          <ol className="mt-5 space-y-4">
+            {summary.topTargets.map((target, index) => (
+              <li key={target.player_id}>
+                <Link href={`/players/${target.player_id}`} className="group flex items-center gap-3">
+                  <span className="stat-figure w-4 text-xs text-text-faint">{String(index + 1).padStart(2, "0")}</span>
+                  <PlayerAvatar playerId={target.player_id} className="w-10" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-text-primary transition group-hover:text-accent">{target.player_name}</p>
+                    <p className="text-[11px] text-text-muted">{target.report_count} verified report{target.report_count === 1 ? "" : "s"}</p>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-accent/20 bg-accent/[0.07]">
+                    <span className="stat-figure text-xs font-bold text-accent">{Number(target.avg_rating).toFixed(1)}</span>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-danger/20 bg-[linear-gradient(135deg,rgba(226,76,76,0.10),rgba(18,27,46,0.85)_55%)] p-5 shadow-[0_20px_70px_rgba(0,0,0,0.12)] sm:p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-danger">Medical flag</p>
+              <h2 className="mt-1 font-display text-lg font-semibold text-white">Injured shortlist players</h2>
+            </div>
+            <span className="stat-figure rounded-xl border border-danger/20 bg-danger/10 px-3 py-1.5 text-sm font-bold text-danger">{summary.injuredShortlisted.length}</span>
+          </div>
+          <div className="mt-4 space-y-2">
+            {summary.injuredShortlisted.length === 0 && <p className="text-sm text-text-muted">No medical conflicts on the shortlist.</p>}
             {summary.injuredShortlisted.map((row) => (
-              <li key={row.player_id} className="text-sm text-text-primary">
-                <span className="font-medium">{row.player_name}</span>
-                <span className="text-text-muted">
-                  {" "}
-                  — {row.injury_type}, expected return{" "}
-                  {formatDate(row.expected_return_date)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-lg border border-border-soft bg-surface p-5">
-          <h2 className="font-display text-base font-semibold">
-            Recent scout reports
-          </h2>
-          <ul className="mt-4 space-y-3">
-            {summary.recentReports.length === 0 && (
-              <li className="text-sm text-text-muted">No reports yet.</li>
-            )}
-            {summary.recentReports.map((r) => (
-              <li
-                key={r.report_id}
-                className="flex items-center justify-between border-b border-border-soft pb-3 last:border-0 last:pb-0"
-              >
-                <div>
-                  <p className="text-sm font-medium text-text-primary">
-                    {r.player_name}
-                  </p>
-                  <p className="text-xs text-text-muted">
-                    by {r.scout_name} · {r.recommendation}
-                  </p>
+              <Link key={row.player_id} href={`/players/${row.player_id}`} className="flex items-center gap-3 rounded-xl border border-white/[0.055] bg-pitch-950/35 p-3 transition hover:border-danger/25 hover:bg-pitch-950/60">
+                <PlayerAvatar playerId={row.player_id} className="w-10" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-text-primary">{row.player_name}</p>
+                  <p className="truncate text-xs text-text-muted">{row.injury_type}</p>
                 </div>
-                <span className="stat-figure rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent">
-                  {r.overall_rating}
-                </span>
-              </li>
+                <div className="text-right">
+                  <p className="text-[9px] uppercase tracking-wider text-text-faint">Expected</p>
+                  <p className="mt-0.5 text-xs font-medium text-danger">{formatDate(row.expected_return_date)}</p>
+                </div>
+              </Link>
             ))}
-          </ul>
+          </div>
         </div>
 
-        <div className="rounded-lg border border-border-soft bg-surface p-5">
-          <h2 className="font-display text-base font-semibold">
-            Recently shortlisted
-          </h2>
-          <ul className="mt-4 space-y-3">
-            {summary.recentShortlisted.length === 0 && (
-              <li className="text-sm text-text-muted">
-                No shortlist entries yet.
-              </li>
-            )}
-            {summary.recentShortlisted.map((s) => (
-              <li
-                key={s.shortlist_id}
-                className="flex items-center justify-between border-b border-border-soft pb-3 last:border-0 last:pb-0"
-              >
-                <div>
-                  <p className="text-sm font-medium text-text-primary">
-                    {s.player_name}
-                  </p>
-                  <p className="text-xs text-text-muted">{s.status}</p>
+        <div className="rounded-2xl border border-white/[0.07] bg-surface/80 p-5 shadow-[0_20px_70px_rgba(0,0,0,0.12)] backdrop-blur sm:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-warning">Opportunity window</p>
+              <h2 className="mt-1 font-display text-lg font-semibold text-white">Contracts approaching expiry</h2>
+            </div>
+            <Link href="/players" className="text-xs font-semibold text-accent hover:text-white">Explore →</Link>
+          </div>
+          <div className="mt-4 divide-y divide-white/[0.055]">
+            {summary.contractExpiries.length === 0 && <p className="py-4 text-sm text-text-muted">No contracts expiring soon.</p>}
+            {summary.contractExpiries.map((contract) => (
+              <Link key={contract.player_id} href={`/players/${contract.player_id}`} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                <PlayerAvatar playerId={contract.player_id} className="w-9" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-text-primary">{contract.player_name}</p>
+                  <p className="truncate text-[11px] text-text-muted">{contract.club_name}</p>
                 </div>
-                <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent">
-                  {s.priority}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="rounded-lg border border-border-soft bg-surface p-5">
-          <h2 className="font-display text-base font-semibold">
-            Contract expiries
-          </h2>
-          <ul className="mt-4 space-y-3">
-            {summary.contractExpiries.length === 0 && (
-              <li className="text-sm text-text-muted">
-                No contracts expiring soon.
-              </li>
-            )}
-            {summary.contractExpiries.map((c) => (
-              <li
-                key={c.player_id}
-                className="flex items-center justify-between border-b border-border-soft pb-3 last:border-0 last:pb-0"
-              >
-                <div>
-                  <p className="text-sm font-medium text-text-primary">
-                    {c.player_name}
-                  </p>
-                  <p className="text-xs text-text-muted">{c.club_name}</p>
+                <div className="text-right">
+                  <p className="stat-figure text-sm font-semibold text-warning">{contract.months_remaining} mo</p>
+                  <p className="text-[10px] text-text-faint">{formatDate(contract.end_date)}</p>
                 </div>
-                <span className="stat-figure text-xs text-text-muted">
-                  {c.months_remaining} mo · {formatDate(c.end_date)}
-                </span>
-              </li>
+              </Link>
             ))}
-          </ul>
+          </div>
         </div>
-
-        <div className="rounded-lg border border-border-soft bg-surface p-5">
-          <h2 className="font-display text-base font-semibold">
-            Highest-rated targets
-          </h2>
-          <ul className="mt-4 space-y-3">
-            {summary.topTargets.length === 0 && (
-              <li className="text-sm text-text-muted">No ratings yet.</li>
-            )}
-            {summary.topTargets.map((t) => (
-              <li
-                key={t.player_id}
-                className="flex items-center justify-between border-b border-border-soft pb-3 last:border-0 last:pb-0"
-              >
-                <div>
-                  <p className="text-sm font-medium text-text-primary">
-                    {t.player_name}
-                  </p>
-                  <p className="text-xs text-text-muted">
-                    {t.report_count} report{t.report_count === 1 ? "" : "s"}
-                  </p>
-                </div>
-                <span className="stat-figure rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent">
-                  {Number(t.avg_rating).toFixed(1)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }
