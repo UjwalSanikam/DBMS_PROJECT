@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
+import BrandLogo from "@/components/brand-logo";
 import LogoutButton from "./logout-button";
 import AppNav, { type NavItem } from "./app-nav";
 
@@ -30,16 +31,7 @@ export default async function AppLayout({
     <div className="min-h-screen bg-pitch-900 lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
       <aside className="border-b border-white/[0.06] bg-pitch-950/95 px-4 py-4 backdrop-blur-xl lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
         <div className="flex items-center justify-between lg:block">
-          <div className="flex items-center gap-3 px-2">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-accent text-pitch-950 shadow-[0_8px_28px_rgba(61,220,132,0.22)]">
-              <span className="font-display text-sm font-bold">SQ</span>
-              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-pitch-950 bg-white" />
-            </div>
-            <div>
-              <p className="font-display text-base font-bold tracking-tight text-white">ScoutIQ</p>
-              <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-text-faint">Recruitment OS</p>
-            </div>
-          </div>
+          <BrandLogo compact className="px-2" />
           <div className="rounded-full border border-accent/20 bg-accent/[0.07] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-accent lg:mt-6 lg:inline-flex">
             2025/26 season
           </div>
