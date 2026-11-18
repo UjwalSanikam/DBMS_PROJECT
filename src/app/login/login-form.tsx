@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/dashboard";
+  const next = searchParams.get("next");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,14 +25,21 @@ export default function LoginForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-      const data = await res.json();
-
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong. Try again.");
+        const data = await res.json().catch(() => null);
+        setError(
+          typeof data?.error === "string"
+            ? data.error
+            : "Sign-in failed on the server. Try again."
+        );
         return;
       }
 
-      router.push(next);
+      const destination =
+        next?.startsWith("/") && !next.startsWith("//") && !/[\s\\]/.test(next)
+          ? next
+          : "/dashboard";
+      router.replace(destination);
       router.refresh();
     } catch {
       setError("Couldn't reach the server. Check your connection and try again.");

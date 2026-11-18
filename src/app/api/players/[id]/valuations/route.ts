@@ -62,7 +62,10 @@ export async function POST(
     return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Expected a JSON object." }, { status: 400 });
+  }
   const { valuation_date, market_value, currency, source_label } = body;
 
   if (!valuation_date || market_value === undefined || market_value === null) {
@@ -77,7 +80,7 @@ export async function POST(
       `INSERT INTO market_value_history (player_id, valuation_date, market_value, currency, source_label)
        VALUES (?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE market_value = VALUES(market_value), source_label = VALUES(source_label)`,
-      [playerId, valuation_date, market_value, currency ?? "EUR", source_label ?? null]
+      [playerId, valuation_date, market_value, currency ?? "EUR", source_label ?? null], "ADMIN"
     );
     return NextResponse.json({ valuation_id: result.insertId }, { status: 201 });
   } catch (err) {

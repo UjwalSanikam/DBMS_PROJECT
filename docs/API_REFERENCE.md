@@ -58,7 +58,7 @@ Similarity parameters: `samePosition=true|false` and `limit`.
 | GET | `/api/players/[id]/injuries` | Authenticated | List injury history |
 | POST | `/api/players/[id]/injuries` | ADMIN | Insert an injury |
 | GET | `/api/players/[id]/contracts` | Authenticated | List contracts |
-| POST | `/api/players/[id]/contracts` | ADMIN | Insert a contract and expire an existing active contract |
+| POST | `/api/players/[id]/contracts` | ADMIN | Lock the player, expire the previous active contract and insert its replacement atomically |
 | GET | `/api/players/[id]/transfers` | Authenticated | List transfers |
 | POST | `/api/players/[id]/transfers` | ADMIN | Call the transactional transfer procedure |
 | GET | `/api/players/[id]/valuations` | Authenticated | List market values |
@@ -72,7 +72,7 @@ Similarity parameters: `samePosition=true|false` and `limit`.
 | --- | --- | --- | --- |
 | GET | `/api/reports` | Authenticated | List reports visible to the signed-in user |
 | GET | `/api/shortlist` | Authenticated | List the user's shortlist; optional `status` filter |
-| POST | `/api/shortlist` | ADMIN or SCOUT | Add or upsert a personal shortlist entry |
+| POST | `/api/shortlist` | ADMIN or SCOUT | Add a personal shortlist entry; return 409 for a duplicate |
 | PATCH | `/api/shortlist/[id]` | Owner or ADMIN | Change priority, status, or reason |
 | DELETE | `/api/shortlist/[id]` | Owner or ADMIN | Remove a shortlist entry |
 

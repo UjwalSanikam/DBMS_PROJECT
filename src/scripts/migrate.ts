@@ -10,8 +10,8 @@ async function main() {
     host: process.env.MYSQL_HOST,
     port: Number(process.env.MYSQL_PORT ?? 3306),
     database: process.env.MYSQL_DATABASE,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
+    user: process.env.MYSQL_ROOT_USER ?? process.env.MYSQL_USER,
+    password: process.env.MYSQL_ROOT_PASSWORD ?? process.env.MYSQL_PASSWORD,
     multipleStatements: true,
   });
 

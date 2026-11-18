@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { query } from "@/lib/db";
+import { query, withTransaction } from "@/lib/db";
 import type { ResultSetHeader } from "mysql2";
 import { requireSession } from "@/lib/session";
 
@@ -66,7 +66,10 @@ export async function POST(
     return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Expected a JSON object." }, { status: 400 });
+  }
   const {
     club_id,
     start_date,
@@ -87,21 +90,19 @@ export async function POST(
   try {
     const resolvedStatus = contract_status ?? "ACTIVE";
 
-    // MySQL won't let a trigger on `contract` modify `contract` (error
-    // 1442), so "only one ACTIVE contract per player" is enforced here
-    // instead of in a trigger: expire any existing active contract for
-    // this player immediately before inserting the new one, in the same
-    // request (not a DB transaction here, but this route only ever runs
-    // one write per request so that's fine).
-    if (resolvedStatus === "ACTIVE") {
-      await query(
+    const result = await withTransaction(async (conn) => {
+      // Serializes concurrent replacements and restores the old contract
+      // automatically if the replacement fails a constraint.
+      await conn.execute(`SELECT player_id FROM player WHERE player_id = ? FOR UPDATE`, [playerId]);
+      if (resolvedStatus === "ACTIVE") {
+        await conn.execute(
         `UPDATE contract SET contract_status = 'EXPIRED'
          WHERE player_id = ? AND contract_status = 'ACTIVE'`,
         [playerId]
       );
-    }
+      }
 
-    const result = await query<ResultSetHeader>(
+      const [inserted] = await conn.execute<ResultSetHeader>(
       `INSERT INTO contract
          (player_id, club_id, start_date, end_date, weekly_salary,
           release_clause, currency, contract_status)
@@ -116,7 +117,9 @@ export async function POST(
         currency ?? "EUR",
         resolvedStatus,
       ]
-    );
+      );
+      return inserted;
+    }, "ADMIN");
     return NextResponse.json({ contract_id: result.insertId }, { status: 201 });
   } catch (err) {
     const code = (err as { code?: string })?.code;

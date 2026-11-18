@@ -1,156 +1,98 @@
-# Testing Plan and Results
+# Testing Results
 
-## Evidence policy
+Executed on 18 November 2026 using the final local checkout. Automated execution by Codex; this is technical verification and does not substitute for the students' viva.
 
-This file separates planned checks from completed evidence. Do not mark a test
-`PASS` until it has been executed against the final submitted version. Add the
-date, tester, and short evidence note for every completed test.
+## Environment
 
-Current overall status: **NOT YET EXECUTED ON THIS CHECKOUT**.
-
-## Environment record
-
-Complete this table during final verification.
-
-| Item | Tested value |
+| Item | Value |
 | --- | --- |
-| Test date | Pending |
-| Tester(s) | Pending |
-| Operating system | Pending |
-| Node.js version | Pending |
-| npm version | Pending |
-| MySQL version | Pending |
-| Qdrant version | Pending |
-| Browser | Pending |
-| Git revision / ZIP version | Pending |
+| OS | Windows |
+| Node and npm | Node 26.13.0; npm 11.20.0 |
+| MySQL | 8.0.46; isolated local instance on 3307 |
+| Qdrant | 1.20.2; local-only service on 6333 |
+| Browser | Microsoft Edge through Playwright |
+| Source snapshot | Working checkout; submission ZIP identifies the final file contents |
 
-## Build and setup tests
+## Build and setup
 
-| ID | Test | Expected result | Status/evidence |
-| --- | --- | --- | --- |
-| SET-01 | Run `npm install` in a clean checkout | Dependencies install without an unresolved package error | Pending |
-| SET-02 | Copy `.env.example` and supply local values | Every required variable is documented and accepted | Pending |
-| SET-03 | Run migrations on an empty `scoutiq` database | Migrations 001-017 apply and appear in `schema_migrations` | Pending |
-| SET-04 | Run migrations a second time | Every migration is skipped; schema is unchanged | Pending |
-| SET-05 | Run all seed commands | Admin and demonstration football/recruitment records exist | Pending |
-| SET-06 | Run `npm run lint` | No ESLint errors | Pending |
-| SET-07 | Run `npm run build` | Production build completes | Pending |
-| SET-08 | Run `npm run dev` | Application opens at `http://localhost:3000` | Pending |
+| Command | Result |
+| --- | --- |
+| npm ci in isolated clean directory | PASS |
+| npm run setup:local | PASS; repeated setup preserves existing demo dataset |
+| npm run db:migrate | PASS; all 19 already-applied files skipped |
+| npm run lint | PASS |
+| npx tsc --noEmit | PASS |
+| npm run build | PASS; webpack explicitly configured |
 
-## Authentication and authorization tests
+## Integration results
 
-| ID | Test | Expected result | Status/evidence |
-| --- | --- | --- | --- |
-| AUTH-01 | Sign in with the configured admin account | Dashboard opens and session cookie is set | Pending |
-| AUTH-02 | Sign in with an invalid password | Generic invalid-credentials response; no account information leak | Pending |
-| AUTH-03 | Open a protected page without a session | Redirect to `/login` | Pending |
-| AUTH-04 | Create a Scout account as Admin | User is inserted with a bcrypt hash | Pending |
-| AUTH-05 | Attempt the admin-users API as Scout | HTTP 403 | Pending |
-| AUTH-06 | Sign out | Cookie is removed and protected pages require login | Pending |
+**52 passed, 0 failed across 52 checks.**
 
-## Database integrity tests
+The harness creates disposable fixtures, a temporary verification database and a rollback-test trigger, then removes them in cleanup. It uses the configured administrator only for setup and direct integrity assertions. APIs use restricted runtime accounts.
 
-Run these against disposable test records.
+| Check | Result |
+| --- | --- |
+| SET-03 fresh migrations | PASS |
+| SET-04 repeat migrations | PASS |
+| SET-05 seeded data | PASS |
+| AUTH-01 admin login and secure cookie | PASS |
+| AUTH-02 invalid password | PASS |
+| AUTH-03 protected page and API | PASS |
+| AUTH-04 admin creates hashed scout | PASS |
+| AUTH-05 scout denied admin operations | PASS |
+| DB-01 height constraint | PASS |
+| DB-02 appearances constraint | PASS |
+| DB-03 pass accuracy constraint | PASS |
+| DB-04 injury dates | PASS |
+| DB-05 contract dates | PASS |
+| DB-06 negative contract salary | PASS |
+| DB-07 email unique | PASS |
+| DB-09 referenced league restriction | PASS |
+| DB-10 cascade deletion | PASS |
+| CRUD-01 player list | PASS |
+| CRUD-02 combined filters | PASS |
+| CRUD-03 player detail | PASS |
+| CRUD-04 admin writes | PASS |
+| TX-05 failed contract replacement preserves active | PASS |
+| CRUD-05 scout recommendation | PASS |
+| DB-08 shortlist unique | PASS |
+| CRUD-06 ownership and update | PASS |
+| CRUD-07 ownership and delete | PASS |
+| CRUD-08 comparison | PASS |
+| CRUD-09 dashboard CTE ranking | PASS |
+| TX-01 transfer commit | PASS |
+| TX-02 transfer mid-operation rollback | PASS |
+| TX-03 recommendation commit | PASS |
+| TX-04 recommendation mid-operation rollback | PASS |
+| ADV-01 six views | PASS |
+| ADV-02 indexes | PASS |
+| ADV-03 four validation triggers | PASS |
+| ADV-04 two stored procedures | PASS |
+| ADV-05 scheduled event | PASS |
+| ADV-06 explain indexed lookup | PASS |
+| RBAC-01 scout database denies users and core writes | PASS |
+| RBAC-02 admin database denies DDL | PASS |
+| RBAC-03 authentication account is read only | PASS |
+| VEC-01 Qdrant connection | PASS |
+| VEC-02 vector rebuild | PASS |
+| VEC-03 dimensions and metric | PASS |
+| VEC-04 neighbor retrieval excludes target | PASS |
+| VEC-05 position filter | PASS |
+| VEC-06 non-indexed player | PASS |
+| VEC-07 delete and restore via API | PASS |
+| VEC-08 prune obsolete points | PASS |
+| VEC-09 combine multi-club statistics | PASS |
+| VEC-10 invalid limits | PASS |
+| AUTH-06 logout invalidates browser cookie | PASS |
 
-| ID | Test | Expected result | Status/evidence |
-| --- | --- | --- | --- |
-| DB-01 | Insert a player with `height_cm=100` | Rejected by check constraint | Pending |
-| DB-02 | Insert statistics with starts greater than appearances | Rejected by check constraint | Pending |
-| DB-03 | Insert pass accuracy greater than 100 | Rejected by check constraint | Pending |
-| DB-04 | Insert an injury return date before injury date | Rejected by check/trigger | Pending |
-| DB-05 | Insert a contract whose end date precedes start date | Rejected by check/trigger | Pending |
-| DB-06 | Insert a negative salary or release clause | Rejected by check/trigger | Pending |
-| DB-07 | Insert duplicate email | Rejected by unique constraint | Pending |
-| DB-08 | Add the same player twice to one scout's shortlist | Upsert or unique-key enforcement prevents duplicate rows | Pending |
-| DB-09 | Delete a league referenced by a club | Rejected by foreign-key restriction | Pending |
-| DB-10 | Delete a test player | Dependent test histories cascade as designed | Pending |
+## Reproduce
 
-Representative negative test:
+Start services with `npm run services:start`, run `npm run dev -- --port 3100` in another terminal, then execute `npm run test:integration`. Set TEST_BASE_URL to test a different port. Raw results: `docs/evidence/integration-results.json`.
 
-```sql
-INSERT INTO injury (
-  player_id, injury_type, body_area, injury_date,
-  expected_return_date, severity, status
-)
-VALUES (
-  <existing_player_id>, 'Test injury', 'Leg', '2026-09-10',
-  '2026-09-01', 'MINOR', 'ACTIVE'
-);
-```
+The tests verify deliberate mid-operation failure and rollback in both stored procedures, invalid contract replacement preserving the old active contract, cross-scout shortlist denial, database grants, vector deletion/restoration and stale cleanup. The UI was also captured through a real browser.
 
-Expected result: SQLSTATE `45000` or the corresponding check-constraint error.
+## Evaluation boundaries
 
-## CRUD and query tests
+Originality, title uniqueness, individual contribution history and live viva performance require the students and evaluator. No automatic test assigns marks. Runtime evidence reflects the local demo; clean installations generate a smaller fictional seed dataset.
 
-| ID | Test | Expected result | Status/evidence |
-| --- | --- | --- | --- |
-| CRUD-01 | Open player list | Players and joined club/league data load | Pending |
-| CRUD-02 | Combine position, age, statistics, value, and availability filters | Only matching players are returned | Pending |
-| CRUD-03 | Open player details | Related histories appear in date order | Pending |
-| CRUD-04 | Admin records injury, contract, transfer, and valuation | Valid rows are inserted |
-| CRUD-05 | Scout creates a report with `SHORTLIST` | Report and shortlist update occur atomically | Pending |
-| CRUD-06 | Update shortlist priority/status/reason | Only owner or Admin can update | Pending |
-| CRUD-07 | Delete shortlist entry | Row is removed and API confirms deletion | Pending |
-| CRUD-08 | Compare two or more player IDs | Joined and aggregated comparison data loads | Pending |
-| CRUD-09 | Open dashboard | Counts, recent records, expiry and injury alerts, and top targets load | Pending |
-
-## Transaction tests
-
-| ID | Test | Expected result | Status/evidence |
-| --- | --- | --- | --- |
-| TX-01 | Call `sp_record_transfer` with valid data | Transfer inserted, old membership closed, new membership opened | Pending |
-| TX-02 | Force a failure during `sp_record_transfer` | No partial transfer or membership update remains | Pending |
-| TX-03 | Call `sp_add_scout_recommendation` with `PRIORITY` | Report inserted and high-priority shortlist row created/updated | Pending |
-| TX-04 | Force a failure during recommendation | Neither half of the workflow is committed | Pending |
-
-## View, index, procedure, trigger, and event evidence
-
-Use these commands during the database demonstration:
-
-```sql
-SHOW FULL TABLES WHERE Table_type = 'VIEW';
-SHOW INDEX FROM player_statistics;
-SHOW TRIGGERS;
-SHOW PROCEDURE STATUS WHERE Db = 'scoutiq';
-SHOW EVENTS FROM scoutiq;
-SELECT * FROM vw_player_recruitment_snapshot LIMIT 10;
-EXPLAIN SELECT * FROM player_statistics
-WHERE player_id = 1 AND season = '2025-2026';
-```
-
-| ID | Expected evidence | Status/evidence |
-| --- | --- | --- |
-| ADV-01 | Five recruitment views are present | Pending |
-| ADV-02 | Expected player/statistics/contract/report indexes are present | Pending |
-| ADV-03 | Four active validation triggers remain after migration 017 | Pending |
-| ADV-04 | Two stored procedures are present | Pending |
-| ADV-05 | Contract-expiry event exists; scheduler state is recorded | Pending |
-| ADV-06 | `EXPLAIN` shows the appropriate player-season index | Pending |
-
-## Qdrant tests
-
-| ID | Test | Expected result | Status/evidence |
-| --- | --- | --- | --- |
-| VEC-01 | Confirm Qdrant health at configured URL | Qdrant responds | Pending |
-| VEC-02 | Run `npm run rebuild-vectors` | `player_profiles` is created and eligible points are upserted | Pending |
-| VEC-03 | Inspect collection | Vector size is 10 and distance is cosine | Pending |
-| VEC-04 | Request similar players | Target is excluded and nearest players are returned | Pending |
-| VEC-05 | Enable same-position filter | Every returned player has the target position | Pending |
-| VEC-06 | Request player below 450 minutes or not indexed | Clear 404-style explanation is returned | Pending |
-
-## Final result summary
-
-Complete after execution:
-
-| Category | Passed | Failed | Blocked |
-| --- | ---: | ---: | ---: |
-| Setup/build | 0 | 0 | 8 pending |
-| Authentication | 0 | 0 | 6 pending |
-| Database integrity | 0 | 0 | 10 pending |
-| CRUD/queries | 0 | 0 | 9 pending |
-| Transactions | 0 | 0 | 4 pending |
-| Advanced SQL | 0 | 0 | 6 pending |
-| Vector search | 0 | 0 | 6 pending |
-
-Do not submit this table with pending counts. Replace it with the actual final
-totals and explain every failed or blocked test.
+The same 52 checks also passed against the production server at http://localhost:3000. A separate clean source installation built successfully without .env.

@@ -76,7 +76,6 @@ export async function GET(request: NextRequest) {
   const maxInjuryCount = searchParams.get("maxInjuryCount");
 
   const conditions: string[] = [];
-  const havingConditions: string[] = [];
   const params: Array<string | number> = [];
 
   if (name) {
@@ -135,60 +134,54 @@ export async function GET(request: NextRequest) {
     params.push(injurySeverity);
   }
 
-  // Performance filters apply to HAVING because they reference the joined
-  // player_statistics columns, and NULL-safe comparisons here are simpler
-  // expressed post-join with COALESCE than repeated in WHERE.
+  // Performance predicates belong in WHERE; these are joined row values.
   if (minAppearances) {
-    havingConditions.push(`COALESCE(ps.appearances, 0) >= ?`);
+    conditions.push(`COALESCE(ps.appearances, 0) >= ?`);
     params.push(Number(minAppearances));
   }
   if (minMinutes) {
-    havingConditions.push(`COALESCE(ps.minutes_played, 0) >= ?`);
+    conditions.push(`COALESCE(ps.minutes_played, 0) >= ?`);
     params.push(Number(minMinutes));
   }
   if (minGoals) {
-    havingConditions.push(`COALESCE(ps.goals, 0) >= ?`);
+    conditions.push(`COALESCE(ps.goals, 0) >= ?`);
     params.push(Number(minGoals));
   }
   if (minAssists) {
-    havingConditions.push(`COALESCE(ps.assists, 0) >= ?`);
+    conditions.push(`COALESCE(ps.assists, 0) >= ?`);
     params.push(Number(minAssists));
   }
   if (minXg) {
-    havingConditions.push(`COALESCE(ps.xg, 0) >= ?`);
+    conditions.push(`COALESCE(ps.xg, 0) >= ?`);
     params.push(Number(minXg));
   }
   if (minXa) {
-    havingConditions.push(`COALESCE(ps.xa, 0) >= ?`);
+    conditions.push(`COALESCE(ps.xa, 0) >= ?`);
     params.push(Number(minXa));
   }
   if (minPassAccuracy) {
-    havingConditions.push(`COALESCE(ps.pass_accuracy, 0) >= ?`);
+    conditions.push(`COALESCE(ps.pass_accuracy, 0) >= ?`);
     params.push(Number(minPassAccuracy));
   }
   if (minKeyPasses) {
-    havingConditions.push(`COALESCE(ps.key_passes, 0) >= ?`);
+    conditions.push(`COALESCE(ps.key_passes, 0) >= ?`);
     params.push(Number(minKeyPasses));
   }
   if (minTackles) {
-    havingConditions.push(`COALESCE(ps.tackles, 0) >= ?`);
+    conditions.push(`COALESCE(ps.tackles, 0) >= ?`);
     params.push(Number(minTackles));
   }
   if (minInterceptions) {
-    havingConditions.push(`COALESCE(ps.interceptions, 0) >= ?`);
+    conditions.push(`COALESCE(ps.interceptions, 0) >= ?`);
     params.push(Number(minInterceptions));
   }
   if (maxInjuryCount) {
-    havingConditions.push(`injury_count <= ?`);
+    conditions.push(`COALESCE(ic.injury_count, 0) <= ?`);
     params.push(Number(maxInjuryCount));
   }
 
   const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-  const havingClause = havingConditions.length
-    ? `HAVING ${havingConditions.join(" AND ")}`
-    : "";
-
-  const sql = `
+const sql = `
     SELECT
       p.player_id, p.first_name, p.last_name, p.date_of_birth, p.nationality,
       p.primary_position, p.preferred_foot, p.height_cm, p.photo_url,
@@ -210,7 +203,7 @@ export async function GET(request: NextRequest) {
       SELECT player_id, COUNT(*) AS injury_count FROM injury GROUP BY player_id
     ) ic ON ic.player_id = p.player_id
     ${whereClause}
-    ${havingClause}
+
     ORDER BY p.last_name, p.first_name
     LIMIT 100
   `;

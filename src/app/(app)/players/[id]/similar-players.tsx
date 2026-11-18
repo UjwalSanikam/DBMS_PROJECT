@@ -11,11 +11,23 @@ interface SimilarPlayer {
   similarity_percent: number;
 }
 
-export default function SimilarPlayers({ playerId }: { playerId: number }) {
+export default function SimilarPlayers({ playerId, isAdmin = false }: { playerId: number; isAdmin?: boolean }) {
   const [results, setResults] = useState<SimilarPlayer[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [samePosition, setSamePosition] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  async function manageIndex(remove: boolean) {
+    setLoading(true); setError(null); setNotice(null); setResults(null);
+    try {
+      const response = await fetch(remove ? `/api/players/${playerId}/vector` : "/api/admin/vectors", {method: remove ? "DELETE" : "POST"});
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Could not update similarity search.");
+      setNotice(remove ? "Player removed from similarity search. Refresh the index to restore eligible players." : `Similarity search refreshed for ${data.indexed} players.`);
+    } catch (err) { setError(err instanceof Error ? err.message : "Could not update similarity search."); }
+    finally { setLoading(false); }
+  }
 
   async function handleFindSimilar() {
     setLoading(true);
@@ -69,6 +81,11 @@ export default function SimilarPlayers({ playerId }: { playerId: number }) {
           {error}
         </p>
       )}
+      {notice && <p role="status" className="mt-3 text-sm text-accent">{notice}</p>}
+      {isAdmin && <div className="mt-3 flex flex-wrap gap-3">
+        <button onClick={() => manageIndex(false)} disabled={loading} className="text-xs text-accent disabled:opacity-50">Refresh similarity index</button>
+        <button onClick={() => manageIndex(true)} disabled={loading} className="text-xs text-danger disabled:opacity-50">Remove player from similarity search</button>
+      </div>}
 
       {results && (
         <ul className="mt-4 space-y-2">

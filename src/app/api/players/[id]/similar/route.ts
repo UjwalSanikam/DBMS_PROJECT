@@ -23,14 +23,18 @@ export async function GET(
 
   const { id } = await params;
   const playerId = Number(id);
-  if (!Number.isInteger(playerId)) {
+  if (!Number.isSafeInteger(playerId) || playerId <= 0) {
     return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
   }
 
   const { searchParams } = new URL(request.url);
   const samePositionOnly = searchParams.get("samePosition") === "true";
   const limit = Number(searchParams.get("limit") ?? 5);
+  if (!Number.isInteger(limit) || limit < 1 || limit > 20) {
+    return NextResponse.json({error: "limit must be an integer between 1 and 20."}, {status: 400});
+  }
 
+  try {
   const client = getQdrantClient();
 
   // Step 1: fetch the target player's stored vector + payload.
@@ -96,4 +100,7 @@ export async function GET(
     });
 
   return NextResponse.json({ similar });
+  } catch {
+    return NextResponse.json({error: "Similarity search is unavailable. Ask an administrator to start Qdrant and refresh the index."}, {status: 503});
+  }
 }

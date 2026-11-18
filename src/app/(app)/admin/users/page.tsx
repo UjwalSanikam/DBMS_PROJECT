@@ -1,5 +1,6 @@
 import { query } from "@/lib/db";
 import NewUserForm from "./new-user-form";
+import { requireSession } from "@/lib/session";
 
 interface UserRow {
   user_id: number;
@@ -10,9 +11,10 @@ interface UserRow {
 }
 
 export default async function AdminUsersPage() {
+  await requireSession(["ADMIN"]);
   const users = await query<UserRow[]>(
     `SELECT user_id, full_name, email, role, created_at
-     FROM \`user\` ORDER BY created_at DESC`
+     FROM \`user\` ORDER BY created_at DESC`, [], "ADMIN"
   );
 
   return (

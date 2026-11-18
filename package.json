@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "tsx src/scripts/migrate.ts",
@@ -12,10 +12,16 @@
     "db:seed-football": "tsx src/scripts/seed-football.ts",
     "db:seed-recruitment": "tsx src/scripts/seed-recruitment.ts",
     "rebuild-vectors": "tsx src/scripts/rebuild-vectors.ts",
-    "import-transfermarkt": "tsx src/scripts/import-transfermarkt.ts"
+    "import-transfermarkt": "tsx src/scripts/import-transfermarkt.ts",
+    "db:provision": "tsx src/scripts/provision-database.ts",
+    "db:create": "tsx src/scripts/provision-database.ts --create-only",
+    "setup:local": "tsx src/scripts/setup-local.ts",
+    "services:start": "tsx src/scripts/setup-local.ts --services-only",
+    "test:integration": "tsx src/scripts/test-integration.ts",
+    "qdrant:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-qdrant.ps1"
   },
   "dependencies": {
-    "@qdrant/js-client-rest": "^1.18.0",
+    "@qdrant/js-client-rest": "^1.20.0",
     "bcryptjs": "^3.0.3",
     "csv-parse": "^7.0.2",
     "jose": "^6.2.10",

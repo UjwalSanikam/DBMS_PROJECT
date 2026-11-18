@@ -5,15 +5,19 @@ import mysql, { type Pool, type PoolOptions } from "mysql2/promise";
 // below and use parameterized placeholders (`?`) — never string-concatenate
 // user input into SQL.
 
-const globalForDb = globalThis as unknown as { scoutiqPool?: Pool };
+export type DatabaseRole = "ADMIN" | "SCOUT" | "AUTH";
+const globalForDb = globalThis as unknown as { scoutiqPools?: Partial<Record<DatabaseRole, Pool>> };
 
-function buildPool(): Pool {
+function buildPool(role: DatabaseRole): Pool {
+  const user = process.env[`MYSQL_${role}_USER`];
+  const password = process.env[`MYSQL_${role}_PASSWORD`];
+  if (!user || !password) throw new Error(`Configure MYSQL_${role}_USER and MYSQL_${role}_PASSWORD using npm run db:provision.`);
   const options: PoolOptions = {
     host: process.env.MYSQL_HOST,
     port: Number(process.env.MYSQL_PORT ?? 3306),
     database: process.env.MYSQL_DATABASE,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
+    user,
+    password,
     waitForConnections: true,
     connectionLimit: 10,
     maxIdle: 10,
@@ -25,11 +29,12 @@ function buildPool(): Pool {
   return mysql.createPool(options);
 }
 
-export function getPool(): Pool {
-  if (!globalForDb.scoutiqPool) {
-    globalForDb.scoutiqPool = buildPool();
+export function getPool(role: DatabaseRole = "SCOUT"): Pool {
+  globalForDb.scoutiqPools ??= {};
+  if (!globalForDb.scoutiqPools[role]) {
+    globalForDb.scoutiqPools[role] = buildPool(role);
   }
-  return globalForDb.scoutiqPool;
+  return globalForDb.scoutiqPools[role]!;
 }
 
 /**
@@ -40,9 +45,10 @@ type QueryParam = string | number | boolean | null | Date | Buffer;
 
 export async function query<T = unknown>(
   sql: string,
-  params: ReadonlyArray<QueryParam> = []
+  params: ReadonlyArray<QueryParam> = [],
+  role: DatabaseRole = "SCOUT"
 ): Promise<T> {
-  const pool = getPool();
+  const pool = getPool(role);
   const [rows] = await pool.execute(sql, params as QueryParam[]);
   return rows as T;
 }
@@ -53,9 +59,10 @@ export async function query<T = unknown>(
  * whole callback commits or rolls back atomically.
  */
 export async function withTransaction<T>(
-  fn: (conn: mysql.PoolConnection) => Promise<T>
+  fn: (conn: mysql.PoolConnection) => Promise<T>,
+  role: DatabaseRole = "SCOUT"
 ): Promise<T> {
-  const pool = getPool();
+  const pool = getPool(role);
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();

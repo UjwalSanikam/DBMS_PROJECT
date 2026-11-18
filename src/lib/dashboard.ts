@@ -124,13 +124,9 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     ),
 
     query<TopTargetRow[]>(
-      `SELECT r.player_id, CONCAT(p.first_name, ' ', p.last_name) AS player_name,
-              AVG(r.overall_rating) AS avg_rating, COUNT(*) AS report_count
-       FROM scout_report r
-       INNER JOIN player p ON p.player_id = r.player_id
-       GROUP BY r.player_id, p.first_name, p.last_name
-       HAVING COUNT(*) >= 1
-       ORDER BY avg_rating DESC
+      `SELECT player_id, player_name, avg_rating, report_count
+       FROM vw_ranked_scout_targets
+       ORDER BY recruitment_rank, player_id
        LIMIT 5`
     ),
   ]);

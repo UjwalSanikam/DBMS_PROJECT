@@ -1,123 +1,43 @@
 # Final Demonstration Guide
 
-Target duration: approximately 10-12 minutes. Adjust to the instructor's time
-limit while preserving the database-focused steps.
+Allow approximately 10 to 12 minutes.
 
-## Before the demonstration
+1. Run `npm run services:start`, then `npm run dev`. Use your local credentials without showing `.env`.
+2. Show `docs/ER_DIAGRAM.png`: explain keys, player histories, club membership and report/shortlist ownership.
+3. Run `SHOW FULL TABLES`, `SHOW TRIGGERS`, `SHOW EVENTS` and `SHOW PROCEDURE STATUS WHERE Db='scoutiq'`. Explain six views, four triggers, two procedures and the daily expiry event.
+4. Show migration 019: its CTE aggregates scout ratings and DENSE_RANK orders targets. The dashboard reads this view.
+5. Sign in as Admin, show the dashboard, combine player filters, open a profile and compare two players.
+6. Sign in as a Scout. Explain the missing admin navigation, show that admin APIs return 403 and that the Scout MySQL account cannot write users or core player records. Database grants protect table operations; API checks protect per-scout ownership.
+7. Show the shortlist insert/update/delete APIs using disposable records. A SHORTLIST or PRIORITY report automatically updates the author's shortlist transactionally.
+8. Show `docs/evidence/integration-results.json`: the transfer and recommendation tests deliberately fail after their first write, then verify rollback. Contract replacement is also transactional and locks the player row.
+9. On an indexed profile, find similar players, apply the position filter, delete the target vector as Admin, observe the missing-vector message, then refresh the index to restore it. Explain all ten features, per-90 conversion, z-score standardization and cosine similarity.
+10. Present the report, passing test summary and the requested equal responsibility allocation. Both students should explain and modify their assigned work in the viva.
 
-1. Start MySQL and confirm the `scoutiq` database is available.
-2. Start Qdrant and confirm the `player_profiles` collection exists.
-3. Run `npm run db:migrate` to demonstrate repeatable migration skipping.
-4. Start the app with `npm run dev`.
-5. Keep MySQL Workbench or the MySQL CLI ready.
-6. Use demonstration accounts only; never display `.env` or real credentials.
-7. Prepare player IDs that have statistics and Qdrant vectors.
-
-## Suggested presentation sequence
-
-### 1. Problem and motivation - 1 minute
-
-Explain that recruitment decisions combine structured histories, human scout
-reports, and similarity analysis. State why a spreadsheet or simple player CRUD
-page does not maintain the necessary relationships and integrity.
-
-### 2. ER diagram and relational schema - 2 minutes
-
-Open `ER_DIAGRAM.md` and explain:
-
-- One league to many clubs
-- Player-club membership as a time-varying relation
-- One player to many statistics, injuries, contracts, transfers, and values
-- User ownership of reports and shortlists
-- Primary keys, foreign keys, unique keys, and referential actions
-
-### 3. Database implementation - 2 minutes
-
-Run:
+## Useful database commands
 
 ```sql
-SHOW TABLES;
-SHOW FULL TABLES WHERE Table_type = 'VIEW';
+SELECT * FROM vw_ranked_scout_targets ORDER BY recruitment_rank LIMIT 5;
+SHOW FULL TABLES WHERE Table_type='VIEW';
 SHOW TRIGGERS;
-SHOW PROCEDURE STATUS WHERE Db = 'scoutiq';
+SHOW PROCEDURE STATUS WHERE Db='scoutiq';
+SHOW EVENTS FROM scoutiq;
 SHOW INDEX FROM player_statistics;
+EXPLAIN SELECT * FROM player_statistics WHERE player_id=1 AND season='2025-2026';
+SELECT CURRENT_ROLE();
+SHOW GRANTS;
 ```
 
-Explain at least four advanced concepts. Recommended selection: views,
-transactions/stored procedures, triggers, indexing, and vector similarity.
+Log in as the specific MySQL runtime user to demonstrate its `CURRENT_ROLE()` and denied operations. Do not run destructive examples on real records. The automated test harness supplies and cleans up disposable fixtures.
 
-### 4. Application workflow - 3 minutes
+## Viva preparation
 
-1. Sign in as Admin.
-2. Show dashboard aggregates and alerts.
-3. Search players with several filters.
-4. Open a player and show related histories.
-5. Compare players.
-6. Sign in or explain the Scout role.
-7. Create a report that automatically updates the shortlist.
-8. Update and delete a disposable shortlist entry to demonstrate full DML.
+- Why MySQL and Qdrant? MySQL manages related records, constraints and transactions; Qdrant is a derived similarity index.
+- What happens if a transfer fails? The procedure's exit handler rolls back the transfer and membership changes together.
+- What happens if a replacement contract is invalid? The transaction rolls back, preserving the prior active contract. A player-row lock serializes replacements.
+- Is similarity a prediction? No. It measures numerical playing-style similarity and does not predict quality.
+- How do you handle transfers within a season? Sum counting statistics and minutes across clubs, weight pass accuracy by minutes, then create one vector per player.
+- How do you remove stale vectors? Rebuild upserts current eligible IDs, scans stored IDs and deletes those no longer eligible.
+- Where is RBAC enforced? MySQL accounts and roles limit table/column operations; signed sessions and API checks limit application roles and shortlist ownership.
+- Why does setup need an administrator? Creating schemas, accounts, roles, events and triggers requires privileges that HTTP runtime accounts deliberately lack.
 
-### 5. Integrity and transaction proof - 1 minute
-
-Attempt an invalid injury or contract date and show that MySQL rejects it.
-Then explain how `sp_record_transfer` groups transfer insertion and club
-membership updates into one atomic transaction.
-
-### 6. Vector search - 1 minute
-
-1. Open an indexed player.
-2. Display similar players.
-3. Enable same-position filtering.
-4. Explain the ten features, per-90 conversion, z-score normalization, Qdrant
-   storage, and cosine similarity.
-
-### 7. Testing, contributions, and conclusion - 1-2 minutes
-
-Show the completed `TESTING.md` summary and explain the actual team split.
-Conclude that MySQL handles integrity and transactions while Qdrant handles
-nearest-neighbor retrieval.
-
-## Likely viva questions
-
-### Why use two databases?
-
-MySQL is appropriate for normalized relationships, constraints, transactions,
-and reporting. Qdrant is appropriate for nearest-neighbor vector retrieval.
-Qdrant is derived from MySQL rather than being a second source of truth.
-
-### Why not calculate similarity only in SQL?
-
-SQL can compare a small fixed dataset, but a vector index provides a clear and
-scalable nearest-neighbor retrieval abstraction. It also supports metadata
-filtering while keeping similarity logic separate from transactional data.
-
-### What ensures consistency?
-
-Foreign keys, unique/check constraints, triggers, parameterized statements,
-role checks, and transactions. Derived views avoid storing redundant values
-such as age or availability.
-
-### What happens when part of a transfer fails?
-
-The procedure's SQL exception handler rolls back the transaction, so the
-transfer and membership history cannot be partially updated.
-
-### What normal form is the schema?
-
-The operational tables follow third normal form: facts are separated by entity
-and history type, many-to-many/time-varying membership has its own relation,
-and derived values are computed rather than duplicated.
-
-### Is the vector an AI embedding?
-
-It is a deterministic statistical feature embedding, not a language-model
-embedding. The application normalizes ten football measures and stores the
-result in Qdrant for cosine similarity.
-
-## Demo safety
-
-- Never open `.env` while screen sharing.
-- Use test records for insert/update/delete demonstrations.
-- Prepare a database backup before the demo.
-- Keep screenshots available in case a service becomes unavailable.
-- Do not claim a test passed unless the final version actually passed it.
+The final live presentation, title uniqueness and personal contribution explanation must be completed by the students.

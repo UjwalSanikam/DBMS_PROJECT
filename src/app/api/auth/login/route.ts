@@ -30,11 +30,22 @@ export async function POST(request: NextRequest) {
 
   const { email, password } = parsed.data;
 
-  const rows = await query<UserRow[]>(
-    `SELECT user_id, full_name, email, password_hash, role
-     FROM \`user\` WHERE email = ? LIMIT 1`,
-    [email]
-  );
+  let rows: UserRow[];
+  try {
+    rows = await query<UserRow[]>(
+      `SELECT user_id, full_name, email, password_hash, role
+       FROM \`user\` WHERE email = ? LIMIT 1`,
+      [email],
+      "AUTH"
+    );
+  } catch (error) {
+    const code = error instanceof Error && "code" in error ? error.code : undefined;
+    console.error("Login database query failed", code);
+    return NextResponse.json(
+      { error: "Sign-in is unavailable because the app cannot access its database." },
+      { status: 503 }
+    );
+  }
 
   const user = rows[0];
 

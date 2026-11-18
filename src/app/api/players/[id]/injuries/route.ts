@@ -67,7 +67,10 @@ export async function POST(
     return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Expected a JSON object." }, { status: 400 });
+  }
   const {
     injury_type,
     body_area,
@@ -102,7 +105,7 @@ export async function POST(
         severity,
         status ?? "ACTIVE",
         notes ?? null,
-      ]
+      ], "ADMIN"
     );
     return NextResponse.json({ injury_id: result.insertId }, { status: 201 });
   } catch (err) {

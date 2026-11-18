@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getFullPlayerDetail } from "@/lib/player-detail";
 import PlayerAvatar from "@/components/player-avatar";
 import SimilarPlayers from "./similar-players";
+import { requireSession } from "@/lib/session";
 
 function calculateAge(dob: string): number {
   const d = new Date(dob);
@@ -35,6 +36,7 @@ export default async function PlayerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const session = await requireSession();
   const playerId = Number(id);
   if (!Number.isInteger(playerId)) notFound();
 
@@ -286,7 +288,7 @@ export default async function PlayerDetailPage({
       {/* Similar players (client component, on-demand) */}
       <div className="mt-6 rounded-lg border border-border-soft bg-surface p-5">
         <h2 className="font-display text-sm font-semibold">Similar players</h2>
-        <SimilarPlayers playerId={player.player_id} />
+        <SimilarPlayers playerId={player.player_id} isAdmin={session.role === "ADMIN"} />
       </div>
     </div>
   );

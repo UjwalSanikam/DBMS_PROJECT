@@ -66,3 +66,11 @@ The submitted project is designed for local demonstration. The Next.js server,
 MySQL server, and Qdrant server run as separate processes. Environment variables
 connect the application to both databases. Production reverse proxies,
 monitoring, backups, and high availability are outside the academic scope.
+
+## Database roles and runtime connections
+
+The provisioning script creates `scoutiq_admin_role`, `scoutiq_scout_role` and `scoutiq_auth_role`, granted to separate local MySQL users. ADMIN has domain DML and procedure execution; SCOUT has domain reads, shortlist DML, and execution of the recommendation procedure; AUTH can read only the login columns in user. Neither HTTP runtime role has DDL privileges. The root administrator is used only by setup, migrations and verification. The migration/seed account is separate from runtime accounts.
+
+The database query helper defaults to the restricted SCOUT pool. Login explicitly uses AUTH. Admin writes and the admin-user page explicitly use ADMIN after server-side session checks. Per-scout row ownership remains an API responsibility; the MySQL roles enforce table and column privileges.
+
+`src/lib/vector-index.ts` serializes in-process vector mutations. It aggregates season statistics per player, normalizes the features, performs acknowledged upserts, scans point IDs and deletes obsolete points. Deleted eligible vectors are restored by a refresh. Contract replacement uses a transaction and a player-row lock so a failed replacement preserves the current active record.

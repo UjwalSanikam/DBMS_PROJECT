@@ -10,8 +10,9 @@ export const VECTOR_SIZE = 10; // must match the number of features in similarit
 export function getQdrantClient(): QdrantClient {
   if (!globalForQdrant.scoutiqQdrant) {
     globalForQdrant.scoutiqQdrant = new QdrantClient({
-      url: process.env.QDRANT_URL,
+      url: process.env.QDRANT_URL ?? "http://localhost:6333",
       apiKey: process.env.QDRANT_API_KEY || undefined,
+      timeout: 10_000,
     });
   }
   return globalForQdrant.scoutiqQdrant;
@@ -35,4 +36,12 @@ export async function ensurePlayerProfilesCollection(): Promise<void> {
       },
     });
   }
+  const collection = await client.getCollection(PLAYER_PROFILES_COLLECTION);
+  const vectors = collection.config.params.vectors;
+  if (!vectors || !("size" in vectors) || vectors.size !== VECTOR_SIZE || vectors.distance !== "Cosine") {
+    throw new Error("player_profiles must use 10-dimensional Cosine vectors.");
+  }
+  await client.createPayloadIndex(PLAYER_PROFILES_COLLECTION, {
+    field_name: "primary_position", field_schema: "keyword", wait: true,
+  });
 }

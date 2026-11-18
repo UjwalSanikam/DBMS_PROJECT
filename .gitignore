@@ -22,6 +22,8 @@
 
 # local database/runtime state
 /.runtime/
+/tmp/
+/output/submission/
 
 # misc
 .DS_Store

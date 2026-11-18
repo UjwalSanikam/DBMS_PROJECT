@@ -1,5 +1,10 @@
 # Entity-Relationship Diagram
 
+![Rendered ER diagram](ER_DIAGRAM.png)
+
+The SVG and DOT versions alongside this file are editable. UK labels may
+participate in composite keys; exact key definitions are in RELATIONAL_SCHEMA.md.
+
 The diagram represents the physical MySQL tables created by
 `src/db/migrations`. Derived views and the Qdrant collection are shown
 separately because they are not independent relational entities.
@@ -127,6 +132,7 @@ erDiagram
 - `vw_contract_expiry` returns current, non-expired active contracts.
 - `vw_u23_recruitment_candidates` combines age, value, contract, and availability.
 - `vw_player_recruitment_snapshot` combines the principal recruitment fields.
+- `vw_ranked_scout_targets` uses a CTE and DENSE_RANK to rank evaluated players.
 - Qdrant collection `player_profiles` stores a vector keyed by `player_id`.
 
 The Qdrant `player_id` is an application-level reference to `PLAYER.player_id`;

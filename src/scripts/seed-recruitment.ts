@@ -11,7 +11,7 @@ const SCOUTS = [
   { name: "Jonas Weber", email: "jonas.weber@scoutiq.local" },
   { name: "Amara Chen", email: "amara.chen@scoutiq.local" },
 ];
-const SCOUT_PASSWORD = process.env.SEED_SCOUT_PASSWORD ?? "ScoutPass123!";
+const SCOUT_PASSWORD = process.env.SEED_SCOUT_PASSWORD;
 
 function randInt(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1));
@@ -42,6 +42,7 @@ function seededChance(seed: number, probability: number): boolean {
 }
 
 async function main() {
+  if (!SCOUT_PASSWORD) throw new Error("Set SEED_SCOUT_PASSWORD before seeding Scout accounts.");
   const conn = await mysql.createConnection({
     host: process.env.MYSQL_HOST,
     port: Number(process.env.MYSQL_PORT ?? 3306),
@@ -57,7 +58,7 @@ async function main() {
     await conn.execute(
       `INSERT INTO \`user\` (full_name, email, password_hash, role)
        VALUES (?, ?, ?, 'SCOUT')
-       ON DUPLICATE KEY UPDATE full_name = VALUES(full_name)`,
+       ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), password_hash = VALUES(password_hash)`,
       [scout.name, scout.email, passwordHash]
     );
     const [[row]] = await conn.query<mysql.RowDataPacket[]>(
@@ -66,7 +67,13 @@ async function main() {
     );
     scoutIds.push(row.user_id as number);
   }
-  console.log(`Seeded ${scoutIds.length} scout user(s). Password: ${SCOUT_PASSWORD}`);
+  console.log(`Seeded ${scoutIds.length} scout user(s). Use SEED_SCOUT_PASSWORD from your local .env.`);
+  const [[existing]] = await conn.query<mysql.RowDataPacket[]>("SELECT COUNT(*) AS count FROM player_statistics");
+  if (existing.count > 0) {
+    console.log("Recruitment statistics already exist; keeping the current demo histories.");
+    await conn.end();
+    return;
+  }
 
   // --- Player statistics (one row per player for the current season) ---
   const [players] = await conn.query<mysql.RowDataPacket[]>(

@@ -4,9 +4,10 @@ import bcrypt from "bcryptjs";
 
 const ADMIN_NAME = process.env.SEED_ADMIN_NAME ?? "ScoutIQ Admin";
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL ?? "admin@scoutiq.local";
-const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "ChangeMe123!";
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD;
 
 async function main() {
+  if (!ADMIN_PASSWORD) throw new Error("Set SEED_ADMIN_PASSWORD before seeding the admin account.");
   const conn = await mysql.createConnection({
     host: process.env.MYSQL_HOST,
     port: Number(process.env.MYSQL_PORT ?? 3306),
@@ -27,11 +28,6 @@ async function main() {
   );
 
   console.log(`Admin user ready: ${ADMIN_EMAIL}`);
-  if (!process.env.SEED_ADMIN_PASSWORD) {
-    console.log(
-      `(Using default password "${ADMIN_PASSWORD}" — set SEED_ADMIN_PASSWORD to override, and change it after first login.)`
-    );
-  }
 
   await conn.end();
 }

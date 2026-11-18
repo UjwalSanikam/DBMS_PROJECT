@@ -65,7 +65,10 @@ export async function POST(
     return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Expected a JSON object." }, { status: 400 });
+  }
   const {
     from_club_id,
     to_club_id,
@@ -83,7 +86,7 @@ export async function POST(
     );
   }
 
-  const pool = getPool();
+  const pool = getPool("ADMIN");
   try {
     // Uses sp_record_transfer so the TRANSFER insert and the PLAYER_CLUB
     // membership update happen atomically (see migration 013).

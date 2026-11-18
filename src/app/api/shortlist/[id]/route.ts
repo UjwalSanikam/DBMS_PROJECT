@@ -48,7 +48,10 @@ export async function PATCH(
     );
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Expected a JSON object." }, { status: 400 });
+  }
   const { priority, status, reason } = body;
 
   const setClauses: string[] = [];

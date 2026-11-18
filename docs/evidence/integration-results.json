@@ -1,0 +1,268 @@
+{
+  "date": "2026-11-18",
+  "baseUrl": "http://localhost:3000",
+  "results": [
+    {
+      "id": "SET-03 fresh migrations",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "SET-04 repeat migrations",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "SET-05 seeded data",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "AUTH-01 admin login and secure cookie",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "AUTH-02 invalid password",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "AUTH-03 protected page and API",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "AUTH-04 admin creates hashed scout",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "AUTH-05 scout denied admin operations",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "DB-01 height constraint",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "DB-02 appearances constraint",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "DB-03 pass accuracy constraint",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "DB-04 injury dates",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "DB-05 contract dates",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "DB-06 negative contract salary",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "DB-07 email unique",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "DB-09 referenced league restriction",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "DB-10 cascade deletion",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "CRUD-01 player list",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "CRUD-02 combined filters",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "CRUD-03 player detail",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "CRUD-04 admin writes",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "TX-05 failed contract replacement preserves active",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "CRUD-05 scout recommendation",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "DB-08 shortlist unique",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "CRUD-06 ownership and update",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "CRUD-07 ownership and delete",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "CRUD-08 comparison",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "CRUD-09 dashboard CTE ranking",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "TX-01 transfer commit",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "TX-02 transfer mid-operation rollback",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "TX-03 recommendation commit",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "TX-04 recommendation mid-operation rollback",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "ADV-01 six views",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "ADV-02 indexes",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "ADV-03 four validation triggers",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "ADV-04 two stored procedures",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "ADV-05 scheduled event",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "ADV-06 explain indexed lookup",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "RBAC-01 scout database denies users and core writes",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "RBAC-02 admin database denies DDL",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "RBAC-03 authentication account is read only",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "VEC-01 Qdrant connection",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "VEC-02 vector rebuild",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "VEC-03 dimensions and metric",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "VEC-04 neighbor retrieval excludes target",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "VEC-05 position filter",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "VEC-06 non-indexed player",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "VEC-07 delete and restore via API",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "VEC-08 prune obsolete points",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "VEC-09 combine multi-club statistics",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "VEC-10 invalid limits",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    },
+    {
+      "id": "AUTH-06 logout invalidates browser cookie",
+      "status": "PASS",
+      "detail": "Expected result observed"
+    }
+  ],
+  "passed": 52,
+  "failed": 0
+}

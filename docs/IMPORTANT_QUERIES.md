@@ -183,3 +183,37 @@ filter `primary_position`.
 | DELETE | Shortlist removal |
 | ALTER | Migration 016 adds player photo and club crest URLs |
 | DROP | Migration 017 removes the invalid retired contract trigger |
+
+## CTE and window ranking used by the dashboard
+
+```sql
+CREATE OR REPLACE VIEW vw_ranked_scout_targets AS
+WITH report_scores AS (
+  SELECT player_id, AVG(overall_rating) AS avg_rating, COUNT(*) AS report_count
+  FROM scout_report GROUP BY player_id
+)
+SELECT p.player_id, CONCAT(p.first_name, ' ', p.last_name) AS player_name,
+       p.primary_position, rs.avg_rating, rs.report_count,
+       DENSE_RANK() OVER (ORDER BY rs.avg_rating DESC) AS recruitment_rank
+FROM report_scores rs INNER JOIN player p ON p.player_id=rs.player_id;
+```
+
+Migration 018 independently excludes past end dates from the contract-expiry view, and migration 019 adds the ranking view. There are six views after all migrations.
+
+## Vector deletion and synchronization
+
+The Admin profile controls call `DELETE /api/players/[id]/vector` and `POST /api/admin/vectors`. The former uses `client.delete` with the player ID and `wait: true`. The latter combines statistics across clubs, recomputes z-scores, upserts current eligible IDs and deletes obsolete IDs. The integration tests verify removal, 404 retrieval after removal, restoration and position filtering.
+
+## MySQL role demonstration
+
+```sql
+CREATE ROLE IF NOT EXISTS 'scoutiq_scout_role';
+GRANT SELECT ON scoutiq.player TO 'scoutiq_scout_role';
+GRANT INSERT, UPDATE, DELETE ON scoutiq.shortlist TO 'scoutiq_scout_role';
+GRANT 'scoutiq_scout_role' TO 'scoutiq_scout'@'localhost';
+SET DEFAULT ROLE 'scoutiq_scout_role' TO 'scoutiq_scout'@'localhost';
+SELECT CURRENT_ROLE();
+SHOW GRANTS;
+```
+
+The complete grants are implemented in `src/scripts/provision-database.ts`. APIs also check the signed role and shortlist ownership. A Scout database connection is denied core player/user writes and password-hash reads. Admin runtime credentials are denied DDL. The AUTH connection cannot read football tables.

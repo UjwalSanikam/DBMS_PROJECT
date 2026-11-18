@@ -70,7 +70,10 @@ export async function POST(
     return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Expected a JSON object." }, { status: 400 });
+  }
   const { overall_rating, strengths, weaknesses, tactical_fit, recommendation, notes } = body;
 
   if (overall_rating === undefined || !recommendation) {

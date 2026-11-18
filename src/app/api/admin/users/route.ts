@@ -21,7 +21,7 @@ export async function GET() {
 
   const users = await query<UserRow[]>(
     `SELECT user_id, full_name, email, role, created_at
-     FROM \`user\` ORDER BY created_at DESC`
+     FROM \`user\` ORDER BY created_at DESC`, [], "ADMIN"
   );
 
   return NextResponse.json({ users });
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const result = await query<{ insertId: number }>(
       `INSERT INTO \`user\` (full_name, email, password_hash, role)
        VALUES (?, ?, ?, ?)`,
-      [fullName, email, passwordHash, role]
+      [fullName, email, passwordHash, role], "ADMIN"
     );
     return NextResponse.json(
       { user: { id: result.insertId, fullName, email, role } },

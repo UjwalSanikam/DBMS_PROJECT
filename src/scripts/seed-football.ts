@@ -104,6 +104,12 @@ async function main() {
   let leagueCount = 0;
   let clubCount = 0;
   let playerCount = 0;
+  const [[existing]] = await conn.query<mysql.RowDataPacket[]>("SELECT COUNT(*) AS count FROM player");
+  if (existing.count > 0) {
+    console.log("Football records already exist; keeping the current demo dataset.");
+    await conn.end();
+    return;
+  }
 
   for (const league of LEAGUES) {
     const [leagueResult] = await conn.execute<mysql.ResultSetHeader>(

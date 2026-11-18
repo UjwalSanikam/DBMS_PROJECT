@@ -49,17 +49,25 @@ function per90(total: number, minutes: number): number {
 export async function buildRawFeatureVectors(
   season: string
 ): Promise<RawFeatureVector[]> {
-    const rows = await query<PlayerStatsForVector[]>(
-    `SELECT ps.player_id, p.primary_position, ps.club_id, ps.season, ps.minutes_played,
-            ps.goals, ps.assists, ps.xg, ps.xa, ps.shots, ps.key_passes,
-            ps.progressive_passes, ps.pass_accuracy, ps.tackles, ps.interceptions
+  const rows = await query<PlayerStatsForVector[]>(
+    `SELECT ps.player_id, p.primary_position, ps.season,
+            SUM(ps.minutes_played) AS minutes_played,
+            SUM(ps.goals) AS goals, SUM(ps.assists) AS assists,
+            SUM(ps.xg) AS xg, SUM(ps.xa) AS xa, SUM(ps.shots) AS shots,
+            SUM(ps.key_passes) AS key_passes,
+            SUM(ps.progressive_passes) AS progressive_passes,
+            SUM(ps.pass_accuracy * ps.minutes_played) /
+              NULLIF(SUM(ps.minutes_played), 0) AS pass_accuracy,
+            SUM(ps.tackles) AS tackles, SUM(ps.interceptions) AS interceptions
      FROM player_statistics ps
      INNER JOIN player p ON p.player_id = ps.player_id
-     WHERE ps.season = ? AND ps.minutes_played >= ?`,
+     WHERE ps.season = ?
+     GROUP BY ps.player_id, p.primary_position, ps.season
+     HAVING SUM(ps.minutes_played) >= ?`,
     [season, MIN_MINUTES_FOR_VECTOR]
   );
 
-    return rows.map((r) => {
+  return rows.map((r) => {
     const minutes = Number(r.minutes_played);
     return {
       player_id: r.player_id,

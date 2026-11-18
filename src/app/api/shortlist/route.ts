@@ -64,7 +64,10 @@ export async function POST(request: NextRequest) {
     return authErrorResponse(err);
   }
 
-  const body = await request.json();
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "Expected a JSON object." }, { status: 400 });
+  }
   const { player_id, priority, status, reason } = body;
 
   if (!player_id) {
