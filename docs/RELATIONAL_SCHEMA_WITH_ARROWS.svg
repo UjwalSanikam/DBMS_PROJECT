@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2600" height="3874" viewBox="0 0 2600 3874"><rect width="2600" height="3874" fill="white"/>
+<text x='90' y='93.88' font-family='Arial,sans-serif' font-size='52' font-weight='bold'>ScoutIQ | RELATIONAL SCHEMA</text>
+<text x='94' y='142.08' font-family='Arial,sans-serif' font-size='32' font-weight='normal'>Complete attributes and 17 foreign-key connections</text>
+<text x='94' y='195.38' font-family='Arial,sans-serif' font-size='27' font-weight='normal'>Arrows point from FK to PK. Primary keys are underlined; UK denotes a unique constraint.</text>
+<text x='94' y='240.38' font-family='Arial,sans-serif' font-size='27' font-weight='normal'>Arrow colours: PLAYER = blue   CLUB = green   LEAGUE = purple   USER = brown</text>
+<rect x='690' y='300' width='1810' height='194' fill='none' stroke='#282828' stroke-width='2.5'/><rect x='690' y='300' width='1810' height='58' fill='#ebebeb'/>
+<text x='714' y='339.02' font-family='Arial,sans-serif' font-size='33' font-weight='bold'>USER</text>
+<text x='716' y='396.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>user_id  PK</text>
+<polyline points='718,402 814.91535949707,402' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='716' y='436.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>full_name, email UK, password_hash, role</text>
+<text x='716' y='476.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>created_at, updated_at</text>
+<rect x='690' y='532' width='1810' height='194' fill='none' stroke='#282828' stroke-width='2.5'/><rect x='690' y='532' width='1810' height='58' fill='#ebebeb'/>
+<text x='714' y='571.02' font-family='Arial,sans-serif' font-size='33' font-weight='bold'>LEAGUE</text>
+<text x='716' y='628.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>league_id  PK</text>
+<polyline points='718,634 845.417297363281,634' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='716' y='668.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>league_name, country, tier</text>
+<text x='716' y='708.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>UK(league_name, country)</text>
+<rect x='690' y='764' width='1810' height='194' fill='none' stroke='#282828' stroke-width='2.5'/><rect x='690' y='764' width='1810' height='58' fill='#ebebeb'/>
+<text x='714' y='803.02' font-family='Arial,sans-serif' font-size='33' font-weight='bold'>CLUB</text>
+<text x='716' y='860.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>club_id  PK</text>
+<polyline points='718,866 811.72981262207,866' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='716' y='900.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>league_id FK -&gt; LEAGUE.league_id</text>
+<text x='716' y='940.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>club_name, city, country, founded_year, crest_url</text>
+<rect x='690' y='996' width='1810' height='234' fill='none' stroke='#282828' stroke-width='2.5'/><rect x='690' y='996' width='1810' height='58' fill='#ebebeb'/>
+<text x='714' y='1035.02' font-family='Arial,sans-serif' font-size='33' font-weight='bold'>PLAYER</text>
+<text x='716' y='1092.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>player_id  PK</text>
+<polyline points='718,1098 837.36457824707,1098' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='716' y='1132.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>first_name, last_name, date_of_birth, nationality</text>
+<text x='716' y='1172.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>primary_position, secondary_position, preferred_foot, height_cm</text>
+<text x='716' y='1212.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>photo_url, created_at, updated_at</text>
+<rect x='690' y='1268' width='1810' height='234' fill='none' stroke='#282828' stroke-width='2.5'/><rect x='690' y='1268' width='1810' height='58' fill='#ebebeb'/>
+<text x='714' y='1307.02' font-family='Arial,sans-serif' font-size='33' font-weight='bold'>PLAYER_CLUB</text>
+<text x='716' y='1364.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>player_club_id  PK</text>
+<polyline points='718,1370 906.311828613281,1370' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='716' y='1404.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>player_id FK -&gt; PLAYER.player_id</text>
+<text x='716' y='1444.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>club_id FK -&gt; CLUB.club_id</text>
+<text x='716' y='1484.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>start_date, end_date, shirt_number, is_current</text>
+<rect x='690' y='1540' width='1810' height='394' fill='none' stroke='#282828' stroke-width='2.5'/><rect x='690' y='1540' width='1810' height='58' fill='#ebebeb'/>
+<text x='714' y='1579.02' font-family='Arial,sans-serif' font-size='33' font-weight='bold'>PLAYER_STATISTICS</text>
+<text x='716' y='1636.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>stat_id  PK</text>
+<polyline points='718,1642 805.30403137207,1642' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='716' y='1676.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>player_id FK -&gt; PLAYER.player_id</text>
+<text x='716' y='1716.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>club_id FK -&gt; CLUB.club_id</text>
+<text x='716' y='1756.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>league_id FK -&gt; LEAGUE.league_id</text>
+<text x='716' y='1796.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>season, appearances, starts, minutes_played, goals, assists</text>
+<text x='716' y='1836.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>xg, xa, shots, shots_on_target, key_passes, progressive_passes</text>
+<text x='716' y='1876.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>pass_accuracy, tackles, interceptions, created_at, updated_at</text>
+<text x='716' y='1916.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>UK(player_id, club_id, league_id, season)</text>
+<rect x='690' y='1972' width='1810' height='234' fill='none' stroke='#282828' stroke-width='2.5'/><rect x='690' y='1972' width='1810' height='58' fill='#ebebeb'/>
+<text x='714' y='2011.02' font-family='Arial,sans-serif' font-size='33' font-weight='bold'>INJURY</text>
+<text x='716' y='2068.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>injury_id  PK</text>
+<polyline points='718,2074 827.73957824707,2074' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='716' y='2108.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>player_id FK -&gt; PLAYER.player_id</text>
+<text x='716' y='2148.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>injury_type, body_area, injury_date, expected_return_date</text>
+<text x='716' y='2188.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>actual_return_date, severity, status, notes, created_at, updated_at</text>
+<rect x='690' y='2244' width='1810' height='274' fill='none' stroke='#282828' stroke-width='2.5'/><rect x='690' y='2244' width='1810' height='58' fill='#ebebeb'/>
+<text x='714' y='2283.02' font-family='Arial,sans-serif' font-size='33' font-weight='bold'>CONTRACT</text>
+<text x='716' y='2340.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>contract_id  PK</text>
+<polyline points='718,2346 861.399719238281,2346' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='716' y='2380.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>player_id FK -&gt; PLAYER.player_id</text>
+<text x='716' y='2420.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>club_id FK -&gt; CLUB.club_id</text>
+<text x='716' y='2460.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>start_date, end_date, weekly_salary, release_clause, currency</text>
+<text x='716' y='2500.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>contract_status, created_at, updated_at</text>
+<rect x='690' y='2556' width='1810' height='274' fill='none' stroke='#282828' stroke-width='2.5'/><rect x='690' y='2556' width='1810' height='58' fill='#ebebeb'/>
+<text x='714' y='2595.02' font-family='Arial,sans-serif' font-size='33' font-weight='bold'>TRANSFER</text>
+<text x='716' y='2652.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>transfer_id  PK</text>
+<polyline points='718,2658 856.573547363281,2658' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='716' y='2692.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>player_id FK -&gt; PLAYER.player_id</text>
+<text x='716' y='2732.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>from_club_id FK -&gt; CLUB.club_id NULL</text>
+<text x='716' y='2772.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>to_club_id FK -&gt; CLUB.club_id NULL</text>
+<text x='716' y='2812.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>transfer_date, transfer_fee, currency, transfer_type, notes, created_at</text>
+<rect x='690' y='2868' width='1810' height='234' fill='none' stroke='#282828' stroke-width='2.5'/><rect x='690' y='2868' width='1810' height='58' fill='#ebebeb'/>
+<text x='714' y='2907.02' font-family='Arial,sans-serif' font-size='33' font-weight='bold'>MARKET_VALUE_HISTORY</text>
+<text x='716' y='2964.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>valuation_id  PK</text>
+<polyline points='718,2970 874.264953613281,2970' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='716' y='3004.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>player_id FK -&gt; PLAYER.player_id</text>
+<text x='716' y='3044.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>valuation_date, market_value, currency, source_label, created_at</text>
+<text x='716' y='3084.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>UK(player_id, valuation_date)</text>
+<rect x='690' y='3140' width='1810' height='274' fill='none' stroke='#282828' stroke-width='2.5'/><rect x='690' y='3140' width='1810' height='58' fill='#ebebeb'/>
+<text x='714' y='3179.02' font-family='Arial,sans-serif' font-size='33' font-weight='bold'>SCOUT_REPORT</text>
+<text x='716' y='3236.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>report_id  PK</text>
+<polyline points='718,3242 834.13801574707,3242' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='716' y='3276.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>scout_user_id FK -&gt; USER.user_id</text>
+<text x='716' y='3316.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>player_id FK -&gt; PLAYER.player_id</text>
+<text x='716' y='3356.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>overall_rating, strengths, weaknesses, tactical_fit</text>
+<text x='716' y='3396.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>recommendation, notes, created_at, updated_at</text>
+<rect x='690' y='3452' width='1810' height='274' fill='none' stroke='#282828' stroke-width='2.5'/><rect x='690' y='3452' width='1810' height='58' fill='#ebebeb'/>
+<text x='714' y='3491.02' font-family='Arial,sans-serif' font-size='33' font-weight='bold'>SHORTLIST</text>
+<text x='716' y='3548.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>shortlist_id  PK</text>
+<polyline points='718,3554 858.186828613281,3554' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='716' y='3588.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>scout_user_id FK -&gt; USER.user_id</text>
+<text x='716' y='3628.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>player_id FK -&gt; PLAYER.player_id</text>
+<text x='716' y='3668.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>priority, status, reason, created_at, updated_at</text>
+<text x='716' y='3708.32' font-family='Arial,sans-serif' font-size='28' font-weight='normal'>UK(scout_user_id, player_id)</text>
+<polyline points='690,891 80,891 80,619 690,619' fill='none' stroke='#7950a0' stroke-width='2.8'/>
+<polygon points='690,619 672,612 672,626' fill='#7950a0'/>
+<circle cx='690' cy='891' r='4' fill='#7950a0'/>
+<polyline points='690,1395 112,1395 112,1083 690,1083' fill='none' stroke='#245b91' stroke-width='2.8'/>
+<polygon points='690,1083 672,1076 672,1090' fill='#245b91'/>
+<circle cx='690' cy='1395' r='4' fill='#245b91'/>
+<polyline points='690,1435 144,1435 144,851 690,851' fill='none' stroke='#287044' stroke-width='2.8'/>
+<polygon points='690,851 672,844 672,858' fill='#287044'/>
+<circle cx='690' cy='1435' r='4' fill='#287044'/>
+<polyline points='690,1667 176,1667 176,1083 690,1083' fill='none' stroke='#245b91' stroke-width='2.8'/>
+<polygon points='690,1083 672,1076 672,1090' fill='#245b91'/>
+<circle cx='690' cy='1667' r='4' fill='#245b91'/>
+<polyline points='690,1707 208,1707 208,851 690,851' fill='none' stroke='#287044' stroke-width='2.8'/>
+<polygon points='690,851 672,844 672,858' fill='#287044'/>
+<circle cx='690' cy='1707' r='4' fill='#287044'/>
+<polyline points='690,1747 240,1747 240,619 690,619' fill='none' stroke='#7950a0' stroke-width='2.8'/>
+<polygon points='690,619 672,612 672,626' fill='#7950a0'/>
+<circle cx='690' cy='1747' r='4' fill='#7950a0'/>
+<polyline points='690,2099 272,2099 272,1083 690,1083' fill='none' stroke='#245b91' stroke-width='2.8'/>
+<polygon points='690,1083 672,1076 672,1090' fill='#245b91'/>
+<circle cx='690' cy='2099' r='4' fill='#245b91'/>
+<polyline points='690,2371 304,2371 304,1083 690,1083' fill='none' stroke='#245b91' stroke-width='2.8'/>
+<polygon points='690,1083 672,1076 672,1090' fill='#245b91'/>
+<circle cx='690' cy='2371' r='4' fill='#245b91'/>
+<polyline points='690,2411 336,2411 336,851 690,851' fill='none' stroke='#287044' stroke-width='2.8'/>
+<polygon points='690,851 672,844 672,858' fill='#287044'/>
+<circle cx='690' cy='2411' r='4' fill='#287044'/>
+<polyline points='690,2683 368,2683 368,1083 690,1083' fill='none' stroke='#245b91' stroke-width='2.8'/>
+<polygon points='690,1083 672,1076 672,1090' fill='#245b91'/>
+<circle cx='690' cy='2683' r='4' fill='#245b91'/>
+<polyline points='690,2723 400,2723 400,851 690,851' fill='none' stroke='#287044' stroke-width='2.8'/>
+<polygon points='690,851 672,844 672,858' fill='#287044'/>
+<circle cx='690' cy='2723' r='4' fill='#287044'/>
+<polyline points='690,2763 432,2763 432,851 690,851' fill='none' stroke='#287044' stroke-width='2.8'/>
+<polygon points='690,851 672,844 672,858' fill='#287044'/>
+<circle cx='690' cy='2763' r='4' fill='#287044'/>
+<polyline points='690,2995 464,2995 464,1083 690,1083' fill='none' stroke='#245b91' stroke-width='2.8'/>
+<polygon points='690,1083 672,1076 672,1090' fill='#245b91'/>
+<circle cx='690' cy='2995' r='4' fill='#245b91'/>
+<polyline points='690,3267 496,3267 496,387 690,387' fill='none' stroke='#925b28' stroke-width='2.8'/>
+<polygon points='690,387 672,380 672,394' fill='#925b28'/>
+<circle cx='690' cy='3267' r='4' fill='#925b28'/>
+<polyline points='690,3307 528,3307 528,1083 690,1083' fill='none' stroke='#245b91' stroke-width='2.8'/>
+<polygon points='690,1083 672,1076 672,1090' fill='#245b91'/>
+<circle cx='690' cy='3307' r='4' fill='#245b91'/>
+<polyline points='690,3579 560,3579 560,387 690,387' fill='none' stroke='#925b28' stroke-width='2.8'/>
+<polygon points='690,387 672,380 672,394' fill='#925b28'/>
+<circle cx='690' cy='3579' r='4' fill='#925b28'/>
+<polyline points='690,3619 592,3619 592,1083 690,1083' fill='none' stroke='#245b91' stroke-width='2.8'/>
+<polygon points='690,1083 672,1076 672,1090' fill='#245b91'/>
+<circle cx='690' cy='3619' r='4' fill='#245b91'/>
+<text x='690' y='3796.44' font-family='Arial,sans-serif' font-size='26' font-weight='normal'>Line crossings are not junctions. Each arrow is a separate foreign-key constraint.</text>
+<text x='690' y='3837.5' font-family='Arial,sans-serif' font-size='25' font-weight='normal'>Source: canonical SQL migrations 001-019. Migration bookkeeping table excluded.</text>
+</svg>

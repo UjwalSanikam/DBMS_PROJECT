@@ -6,10 +6,11 @@ import { usePathname } from "next/navigation";
 export interface NavItem {
   href: string;
   label: string;
-  icon: "dashboard" | "players" | "compare" | "shortlist" | "reports" | "admin";
+  icon: "dashboard" | "players" | "compare" | "shortlist" | "reports" | "team" | "admin";
 }
 
 const ICONS: Record<NavItem["icon"], React.ReactNode> = {
+  team: <path d="M3 3h18v18H3zM3 12h18M12 3v18M3 8h4v8H3m18-8h-4v8h4M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />,
   dashboard: <path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z" />,
   players: <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m7-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87m0-11.26a4 4 0 0 1 0 7.75" />,
   compare: <path d="M8 3 4 7l4 4M4 7h16M16 21l4-4-4-4m4 4H4" />,

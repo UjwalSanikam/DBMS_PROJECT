@@ -23,10 +23,10 @@ async function mutate(request: NextRequest, id: number, remove: boolean) {
       if (!rows.length) return NextResponse.json({error:"Report not found."},{status:404});
       const row = rows[0];
       if (session.role !== "ADMIN" && row.scout_user_id !== session.userId) return NextResponse.json({error:"You can only change your own reports."},{status:403});
-      if (remove) await conn.execute(`DELETE FROM scout_report WHERE report_id=?`,[id]);
+      if (remove) await conn.execute(`DELETE FROM scout_report WHERE report_id=? AND scout_user_id=?`,[id,row.scout_user_id]);
       else if (parsed?.success) {
         const p = parsed.data;
-        await conn.execute(`UPDATE scout_report SET overall_rating=?,strengths=?,weaknesses=?,tactical_fit=?,recommendation=?,notes=? WHERE report_id=?`,[p.overall_rating,p.strengths,p.weaknesses,p.tactical_fit,p.recommendation,p.notes,id]);
+        await conn.execute(`UPDATE scout_report SET overall_rating=?,strengths=?,weaknesses=?,tactical_fit=?,recommendation=?,notes=? WHERE report_id=? AND scout_user_id=?`,[p.overall_rating,p.strengths,p.weaknesses,p.tactical_fit,p.recommendation,p.notes,id,row.scout_user_id]);
         if (["SHORTLIST","PRIORITY"].includes(p.recommendation)) {
           const priority = p.recommendation === "PRIORITY" ? "HIGH" : "MEDIUM";
           await conn.execute(`INSERT INTO shortlist (scout_user_id,player_id,priority,status,reason) VALUES (?,?,?,'RECOMMENDED',?) ON DUPLICATE KEY UPDATE priority=?,status='RECOMMENDED'`,[row.scout_user_id,row.player_id,priority,`From scout report: ${p.recommendation}`,priority]);

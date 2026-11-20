@@ -37,6 +37,9 @@ async function main() {
         }
         await conn.query(`GRANT SELECT (user_id, full_name) ON ${db}.\`user\` TO ${roleName}`);
         await conn.query(`GRANT INSERT, UPDATE, DELETE ON ${db}.shortlist TO ${roleName}`);
+        for (const table of ["custom_team", "custom_team_player"]) {
+          await conn.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON ${db}.${mysql.escapeId(table)} TO ${roleName}`);
+        }
         await conn.query(`GRANT EXECUTE ON PROCEDURE ${db}.sp_add_scout_recommendation TO ${roleName}`);
       }
     }

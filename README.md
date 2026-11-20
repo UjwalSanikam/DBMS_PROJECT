@@ -54,6 +54,10 @@ npm run services:start
 npm run dev
 ```
 
+For a populated **Scout Reports** page when presenting as the configured admin, run `npm run db:seed-demo-reports` after setup. This adds five fictional, position-specific reports to the account identified by `SEED_ADMIN_EMAIL`. Repeating it skips existing demo reports. Administrators see reports from all authors on the Scout Reports page; scouts see only their own reports there.
+
+Run `npm run db:seed-demo-shortlist` to add six fictional recruitment examples to the same admin account, covering all shortlist statuses and three priority levels. Existing shortlist entries are preserved, including changes made during the demo. These examples do not modify player clubs or contracts.
+
 ## Manual setup with an existing MySQL instance
 
 For another operating system or an existing server, copy `.env.example` to `.env`. Supply real local values for all documented names. `MYSQL_ROOT_USER` and `MYSQL_ROOT_PASSWORD` are used only by provisioning, migrations and the integration test harness. The application uses the separate runtime accounts.

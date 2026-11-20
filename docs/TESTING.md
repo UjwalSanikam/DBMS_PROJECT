@@ -1,5 +1,30 @@
 # Testing Results
 
+## Permission audit — 20 November 2026
+
+`npx tsx src/scripts/test-permissions.ts` passed **133 permission checks** against
+the running local application and its restricted MySQL accounts. The audit creates
+temporary users with hashed random passwords, logs in through the actual login
+API, and removes its fixture users, player, reports, shortlist and teams afterward.
+
+- All 38 non-auth API method/route combinations reject anonymous requests with 401.
+- All 13 admin-only API methods reject scout sessions with 403; admin pages redirect scouts.
+- A second scout cannot edit/delete another scout's reports or shortlist entries.
+- Administrators see every report in the database, including reports from both test scouts; scouts' report lists remain restricted to their own records. Author names and `is_own` labels are verified.
+- A second user, including an administrator, cannot edit/delete another user's personal team.
+- Owners can change their own records; administrators can moderate reports and shortlist entries.
+- Report authors, shortlist owners and team owners come from the session, ignoring supplied owner fields.
+- Other scouts' reports remain readable on player profiles, with author attribution.
+- Forged roles and invalid session cookies are rejected.
+- Effective runtime grants are inspected with `SHOW GRANTS FOR CURRENT_USER USING ...`.
+- The scout account cannot directly update/delete core football records or reports, read password hashes, or modify users.
+- The authentication account cannot read players or modify users; runtime grants contain no DDL privileges.
+
+The report page now labels the player and the report author separately and hides
+edit/delete controls unless `can_manage` is true. Existing CRUD regression tests
+also passed **38 HTTP checks** after these changes. Lint, TypeScript and the
+production build passed. Earlier test results below describe the previous snapshot.
+
 Executed on 18 November 2026 using the final local checkout. Automated execution by Codex; this is technical verification and does not substitute for the students' viva.
 
 ## Environment

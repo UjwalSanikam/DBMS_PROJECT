@@ -1,0 +1,206 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="2820" viewBox="0 0 2400 2820"><rect width="2400" height="2820" fill="white"/>
+<text x='100' y='96.88' font-family='Arial,sans-serif' font-size='52' font-weight='bold'>ScoutIQ | RELATIONAL SCHEMA</text>
+<text x='103' y='143.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>Football scouting and recruitment intelligence</text>
+<text x='103' y='188.44' font-family='Arial,sans-serif' font-size='26' font-weight='normal'>Underlined attribute = primary key     Arrow = foreign key to referenced primary key     ... = other attributes</text>
+<text x='100' y='262.9' font-family='Arial,sans-serif' font-size='35' font-weight='bold'>01   FOOTBALL ENTITIES &amp; PERFORMANCE</text>
+<polyline points='100,287 2300,287' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='250' y='347.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>LEAGUE</text>
+<rect x='250' y='365' width='187' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='271' y='409.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>league_id</text>
+<polyline points='271,417 416,417' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='437' y='365' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='458' y='409.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<text x='940' y='347.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>CLUB</text>
+<rect x='940' y='365' width='150' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='961' y='409.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>club_id</text>
+<polyline points='961,417 1069,417' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='1090' y='365' width='187' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1111' y='409.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>league_id</text>
+<rect x='1277' y='365' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1298' y='409.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<text x='1840' y='347.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>PLAYER</text>
+<rect x='1840' y='365' width='178' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1861' y='409.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>player_id</text>
+<polyline points='1861,417 1997,417' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='2018' y='365' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='2039' y='409.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<text x='440' y='567.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>PLAYER_CLUB</text>
+<rect x='440' y='585' width='252' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='461' y='629.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>player_club_id</text>
+<polyline points='461,637 671,637' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='692' y='585' width='178' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='713' y='629.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>player_id</text>
+<rect x='870' y='585' width='150' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='891' y='629.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>club_id</text>
+<rect x='1020' y='585' width='190' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1041' y='629.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>start_date</text>
+<rect x='1210' y='585' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1231' y='629.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<text x='440' y='792.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>PLAYER_STATISTICS</text>
+<rect x='440' y='810' width='144' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='461' y='854.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>stat_id</text>
+<polyline points='461,862 563,862' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='584' y='810' width='178' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='605' y='854.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>player_id</text>
+<rect x='762' y='810' width='150' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='783' y='854.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>club_id</text>
+<rect x='912' y='810' width='187' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='933' y='854.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>league_id</text>
+<rect x='1099' y='810' width='152' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1120' y='854.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>season</text>
+<rect x='1251' y='810' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1272' y='854.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<polyline points='125,975 125,490 343.5,490 343.5,433' fill='none' stroke='#282828' stroke-width='2.5'/>
+<polygon points='343.5,433 336.5,451 350.5,451' fill='#282828'/>
+<polyline points='2200,975 2200,505 1015,505 1015,433' fill='none' stroke='#282828' stroke-width='2.5'/>
+<polygon points='1015,433 1008,451 1022,451' fill='#282828'/>
+<polyline points='2300,975 2300,465 1929,465 1929,433' fill='none' stroke='#282828' stroke-width='2.5'/>
+<polygon points='1929,433 1922,451 1936,451' fill='#282828'/>
+<polyline points='1183.5,433 1183.5,535 125,535' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='125' cy='535' r='5' fill='#282828'/>
+<polyline points='781,653 781,695 2300,695' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='2300' cy='695' r='5' fill='#282828'/>
+<polyline points='945,653 945,730 2200,730' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='2200' cy='730' r='5' fill='#282828'/>
+<polyline points='673,878 673,925 2300,925' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='2300' cy='925' r='5' fill='#282828'/>
+<polyline points='837,878 837,950 2200,950' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='2200' cy='950' r='5' fill='#282828'/>
+<polyline points='1005.5,878 1005.5,900 125,900' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='125' cy='900' r='5' fill='#282828'/>
+<text x='100' y='1042.9' font-family='Arial,sans-serif' font-size='35' font-weight='bold'>02   CONTRACTS, TRANSFERS &amp; PLAYER HISTORY</text>
+<polyline points='100,1067 2300,1067' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='270' y='1122.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>CLUB</text>
+<rect x='270' y='1140' width='150' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='291' y='1184.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>club_id</text>
+<polyline points='291,1192 399,1192' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='420' y='1140' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='441' y='1184.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<text x='1810' y='1122.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>PLAYER</text>
+<rect x='1810' y='1140' width='178' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1831' y='1184.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>player_id</text>
+<polyline points='1831,1192 1967,1192' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='1988' y='1140' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='2009' y='1184.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<text x='460' y='1312.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>CONTRACT</text>
+<rect x='460' y='1330' width='204' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='481' y='1374.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>contract_id</text>
+<polyline points='481,1382 643,1382' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='664' y='1330' width='178' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='685' y='1374.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>player_id</text>
+<rect x='842' y='1330' width='150' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='863' y='1374.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>club_id</text>
+<rect x='992' y='1330' width='190' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1013' y='1374.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>start_date</text>
+<rect x='1182' y='1330' width='181' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1203' y='1374.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>end_date</text>
+<rect x='1363' y='1330' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1384' y='1374.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<text x='460' y='1512.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>TRANSFER</text>
+<rect x='460' y='1530' width='198' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='481' y='1574.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>transfer_id</text>
+<polyline points='481,1582 637,1582' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='658' y='1530' width='178' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='679' y='1574.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>player_id</text>
+<rect x='836' y='1530' width='229' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='857' y='1574.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>from_club_id</text>
+<rect x='1065' y='1530' width='193' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1086' y='1574.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>to_club_id</text>
+<rect x='1258' y='1530' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1279' y='1574.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<text x='460' y='1712.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>INJURY</text>
+<rect x='460' y='1730' width='168' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='481' y='1774.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>injury_id</text>
+<polyline points='481,1782 607,1782' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='628' y='1730' width='178' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='649' y='1774.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>player_id</text>
+<rect x='806' y='1730' width='202' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='827' y='1774.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>injury_type</text>
+<rect x='1008' y='1730' width='135' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1029' y='1774.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>status</text>
+<rect x='1143' y='1730' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1164' y='1774.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<text x='460' y='1912.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>MARKET_VALUE_HISTORY</text>
+<rect x='460' y='1930' width='217' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='481' y='1974.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>valuation_id</text>
+<polyline points='481,1982 656,1982' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='677' y='1930' width='178' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='698' y='1974.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>player_id</text>
+<rect x='855' y='1930' width='254' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='876' y='1974.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>valuation_date</text>
+<rect x='1109' y='1930' width='238' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1130' y='1974.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>market_value</text>
+<rect x='1347' y='1930' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1368' y='1974.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<polyline points='145,2070 145,1260 345,1260 345,1208' fill='none' stroke='#282828' stroke-width='2.5'/>
+<polygon points='345,1208 338,1226 352,1226' fill='#282828'/>
+<polyline points='2260,2070 2260,1250 1899,1250 1899,1208' fill='none' stroke='#282828' stroke-width='2.5'/>
+<polygon points='1899,1208 1892,1226 1906,1226' fill='#282828'/>
+<polyline points='753,1398 753,1435 2260,1435' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='2260' cy='1435' r='5' fill='#282828'/>
+<polyline points='917,1398 917,1465 145,1465' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='145' cy='1465' r='5' fill='#282828'/>
+<polyline points='747,1598 747,1620 2260,1620' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='2260' cy='1620' r='5' fill='#282828'/>
+<polyline points='950.5,1598 950.5,1640 145,1640' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='145' cy='1640' r='5' fill='#282828'/>
+<polyline points='1161.5,1598 1161.5,1665 145,1665' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='145' cy='1665' r='5' fill='#282828'/>
+<polyline points='717,1798 717,1835 2260,1835' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='2260' cy='1835' r='5' fill='#282828'/>
+<polyline points='766,1998 766,2035 2260,2035' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='2260' cy='2035' r='5' fill='#282828'/>
+<text x='100' y='2142.9' font-family='Arial,sans-serif' font-size='35' font-weight='bold'>03   SCOUTING &amp; RECRUITMENT</text>
+<polyline points='100,2167 2300,2167' fill='none' stroke='#282828' stroke-width='2.5'/>
+<text x='270' y='2222.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>USER</text>
+<rect x='270' y='2240' width='154' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='291' y='2284.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>user_id</text>
+<polyline points='291,2292 403,2292' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='424' y='2240' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='445' y='2284.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<text x='1810' y='2222.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>PLAYER</text>
+<rect x='1810' y='2240' width='178' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1831' y='2284.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>player_id</text>
+<polyline points='1831,2292 1967,2292' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='1988' y='2240' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='2009' y='2284.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<text x='460' y='2397.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>SCOUT_REPORT</text>
+<rect x='460' y='2415' width='174' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='481' y='2459.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>report_id</text>
+<polyline points='481,2467 613,2467' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='634' y='2415' width='245' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='655' y='2459.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>scout_user_id</text>
+<rect x='879' y='2415' width='178' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='900' y='2459.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>player_id</text>
+<rect x='1057' y='2415' width='238' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1078' y='2459.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>overall_rating</text>
+<rect x='1295' y='2415' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1316' y='2459.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<text x='460' y='2587.96' font-family='Arial,sans-serif' font-size='34' font-weight='bold'>SHORTLIST</text>
+<rect x='460' y='2605' width='200' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='481' y='2649.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>shortlist_id</text>
+<polyline points='481,2657 639,2657' fill='none' stroke='#282828' stroke-width='2.5'/>
+<rect x='660' y='2605' width='245' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='681' y='2649.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>scout_user_id</text>
+<rect x='905' y='2605' width='178' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='926' y='2649.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>player_id</text>
+<rect x='1083' y='2605' width='145' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1104' y='2649.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>priority</text>
+<rect x='1228' y='2605' width='135' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1249' y='2649.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>status</text>
+<rect x='1363' y='2605' width='78' height='68' fill='#ebebeb' stroke='#282828' stroke-width='2.5'/>
+<text x='1384' y='2649.2' font-family='Arial,sans-serif' font-size='30' font-weight='normal'>...</text>
+<polyline points='145,2740 145,2360 347,2360 347,2308' fill='none' stroke='#282828' stroke-width='2.5'/>
+<polygon points='347,2308 340,2326 354,2326' fill='#282828'/>
+<polyline points='2260,2740 2260,2340 1899,2340 1899,2308' fill='none' stroke='#282828' stroke-width='2.5'/>
+<polygon points='1899,2308 1892,2326 1906,2326' fill='#282828'/>
+<polyline points='756.5,2483 756.5,2515 145,2515' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='145' cy='2515' r='5' fill='#282828'/>
+<polyline points='968,2483 968,2545 2260,2545' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='2260' cy='2545' r='5' fill='#282828'/>
+<polyline points='782.5,2673 782.5,2705 145,2705' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='145' cy='2705' r='5' fill='#282828'/>
+<polyline points='994,2673 994,2735 2260,2735' fill='none' stroke='#282828' stroke-width='2.5'/>
+<circle cx='2260' cy='2735' r='5' fill='#282828'/>
+<text x='100' y='2792.56' font-family='Arial,sans-serif' font-size='24' font-weight='normal'>12 application tables | Parent tables repeat across sections for readability. Shared lines reference the same parent key.</text>
+</svg>

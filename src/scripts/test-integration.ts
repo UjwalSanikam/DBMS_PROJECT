@@ -42,11 +42,11 @@ async function main() {
     await check("SET-03 fresh migrations",async()=>{
       await db.query(`CREATE DATABASE ${mysql.escapeId(schema)} CHARACTER SET utf8mb4`);
       execFileSync(process.execPath,["node_modules/tsx/dist/cli.mjs","src/scripts/migrate.ts"],{env:{...process.env,MYSQL_DATABASE:schema},stdio:"pipe"});
-      const r=await rows(`SELECT COUNT(*) n FROM ${mysql.escapeId(schema)}.schema_migrations`);assert.equal(r[0].n,19);
+      const r=await rows(`SELECT COUNT(*) n FROM ${mysql.escapeId(schema)}.schema_migrations`);assert.equal(r[0].n,20);
       const v=await rows(`SELECT VIEW_DEFINITION FROM information_schema.VIEWS WHERE TABLE_SCHEMA=? AND TABLE_NAME='vw_contract_expiry'`,[schema]);assert(String(v[0].VIEW_DEFINITION).includes('curdate()'));
     });
     await check("SET-04 repeat migrations",async()=>{
-      const output=execFileSync(process.execPath,["node_modules/tsx/dist/cli.mjs","src/scripts/migrate.ts"],{env:{...process.env,MYSQL_DATABASE:schema},encoding:"utf8"});assert.equal((output.match(/Skipping/g)??[]).length,19);
+      const output=execFileSync(process.execPath,["node_modules/tsx/dist/cli.mjs","src/scripts/migrate.ts"],{env:{...process.env,MYSQL_DATABASE:schema},encoding:"utf8"});assert.equal((output.match(/Skipping/g)??[]).length,20);
     });
     league=await insert("INSERT INTO league(league_name,country) VALUES (?, 'Test')",["Fixture "+suffix]);
     club=await insert("INSERT INTO club(league_id,club_name,country) VALUES (?,?,'Test')",[league,"Fixture A "+suffix]);

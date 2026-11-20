@@ -10,6 +10,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/compare", label: "Compare players", icon: "compare" },
   { href: "/shortlist", label: "Shortlist", icon: "shortlist" },
   { href: "/reports", label: "Scout reports", icon: "reports" },
+  { href: "/teams", label: "Create your team", icon: "team" },
 ];
 
 const ADMIN_NAV_ITEMS: NavItem[] = [

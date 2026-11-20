@@ -3,7 +3,8 @@
 import RecordForm, {DeleteRecord,options} from "./record-form";
 
 type Report = {report_id:number;overall_rating:string;strengths:string|null;weaknesses:string|null;tactical_fit:string|null;notes:string|null;recommendation:string};
-export default function ReportActions({report,onSaved}:{report:Report;onSaved:()=>void}) {
+export default function ReportActions({report,onSaved,canManage}:{report:Report;onSaved:()=>void;canManage:boolean}) {
+  if (!canManage) return null;
   const endpoint = `/api/reports/${report.report_id}`;
   return <div className="mt-3">
     <details><summary className="cursor-pointer text-sm text-accent">Edit report</summary>

@@ -11,6 +11,8 @@
     "db:seed-admin": "tsx src/scripts/seed-admin.ts",
     "db:seed-football": "tsx src/scripts/seed-football.ts",
     "db:seed-recruitment": "tsx src/scripts/seed-recruitment.ts",
+    "db:seed-demo-reports": "tsx src/scripts/seed-demo-reports.ts",
+    "db:seed-demo-shortlist": "tsx src/scripts/seed-demo-shortlist.ts",
     "rebuild-vectors": "tsx src/scripts/rebuild-vectors.ts",
     "import-transfermarkt": "tsx src/scripts/import-transfermarkt.ts",
     "db:provision": "tsx src/scripts/provision-database.ts",

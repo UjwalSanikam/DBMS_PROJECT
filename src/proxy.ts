@@ -8,6 +8,7 @@ const PROTECTED_PREFIXES = [
   "/compare",
   "/shortlist",
   "/reports",
+  "/teams",
   "/admin",
 ];
 
@@ -48,6 +49,7 @@ export const config = {
     "/compare/:path*",
     "/shortlist/:path*",
     "/reports/:path*",
+    "/teams/:path*",
     "/admin/:path*",
   ],
 };

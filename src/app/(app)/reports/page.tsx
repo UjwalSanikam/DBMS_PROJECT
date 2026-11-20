@@ -6,6 +6,10 @@ import ReportActions from "@/components/report-actions";
 
 interface MyReport {
   report_id: number;
+  scout_user_id: number;
+  scout_name: string;
+  can_manage: boolean;
+  is_own: boolean;
   player_id: number;
   player_name: string;
   primary_position: string;
@@ -36,6 +40,7 @@ const RECOMMENDATION_STYLES: Record<string, string> = {
 
 export default function ReportsPage() {
   const [reports, setReports] = useState<MyReport[]>([]);
+  const [scope, setScope] = useState<"all" | "mine">("mine");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -45,7 +50,13 @@ export default function ReportsPage() {
     try {
       const res = await fetch("/api/reports");
       const data = await res.json();
-      if (res.ok) setReports(data.reports);
+      if (!res.ok) throw new Error(data.error ?? "Could not load your reports.");
+      setReports(data.reports);
+      setScope(data.scope === "all" ? "all" : "mine");
+      setError(null);
+    } catch (err) {
+      setReports([]);
+      setError(err instanceof Error ? err.message : "Could not load your reports.");
     } finally {
       setLoading(false);
     }
@@ -136,7 +147,9 @@ export default function ReportsPage() {
           </p>
           <h1 className="mt-1 font-display text-2xl font-semibold">Scout Reports</h1>
           <p className="mt-1.5 text-sm text-text-muted max-w-xl">
-            Reports you&apos;ve written for players.
+            {scope === "all"
+              ? "Reports from all scouts. As an administrator, you can review, edit or delete any report."
+              : "Your reports about players. You can edit or delete your own reports."}
           </p>
         </div>
         <button
@@ -268,12 +281,6 @@ export default function ReportsPage() {
             />
           </div>
 
-          {error && (
-            <p role="alert" className="text-sm text-danger">
-              {error}
-            </p>
-          )}
-
           <button
             type="submit"
             disabled={submitting}
@@ -284,16 +291,18 @@ export default function ReportsPage() {
         </form>
       )}
 
+      {error && <p role="alert" className="mt-4 text-sm text-danger">{error}</p>}
       <div className="mt-6 space-y-3">
         {loading && <p className="text-sm text-text-muted">Loading reports…</p>}
         {!loading && reports.length === 0 && (
-          <p className="text-sm text-text-muted">You haven&apos;t written any reports yet.</p>
+          <p className="text-sm text-text-muted">{scope === "all" ? "No scout reports have been written yet." : "You haven’t written any reports yet."}</p>
         )}
         {!loading &&
           reports.map((r) => (
             <div key={r.report_id} className="rounded-lg border border-border-soft bg-surface p-4">
               <div className="flex items-start justify-between">
                 <div>
+                  <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-text-faint">Player</p>
                   <Link
                     href={`/players/${r.player_id}`}
                     className="text-sm font-medium text-text-primary hover:text-accent"
@@ -301,6 +310,7 @@ export default function ReportsPage() {
                     {r.player_name}
                   </Link>
                   <p className="text-xs text-text-muted">{r.primary_position}</p>
+                  <p className="mt-1 text-xs text-accent">Written by {r.scout_name}{r.is_own ? " · Your report" : ""}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span
@@ -325,7 +335,7 @@ export default function ReportsPage() {
               {r.notes && (
                 <p className="mt-2 text-xs text-text-muted">Notes: {r.notes}</p>
               )}
-              <ReportActions report={r} onSaved={fetchReports} />
+              <ReportActions report={r} canManage={r.can_manage} onSaved={fetchReports} />
             </div>
           ))}
       </div>

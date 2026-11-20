@@ -1,5 +1,60 @@
 # API Reference
 
+## Role and ownership rules
+
+| Action | SCOUT | ADMIN |
+| --- | --- | --- |
+| Read players, clubs, history and dashboard | Allowed | Allowed |
+| Add/edit/delete players; add injuries, contracts, transfers or valuations | Denied | Allowed |
+| Manage users; create/update/delete vectors; rebuild index | Denied | Allowed |
+| Create reports | Allowed; author is the session user | Allowed; author is the session user |
+| Edit/delete reports or shortlist entries | Own records only | Any record |
+| List reports at `/api/reports` | Own records only | All reports from all authors |
+| List personal shortlist | Own records only | Own records only |
+| Read reports on a player profile | All reports, with author names | All reports, with author names |
+| List/edit/delete custom teams | Own teams only | Own teams only |
+
+The Scout Reports page names the **player** being reviewed and separately shows
+`Written by <scout name>` with `· Your report` only for the current user's own
+reports. Administrators see all authors; scouts see their own reports on this page.
+The reports API returns `scope` (`all` or `mine`) and `is_own` for each report.
+Seeded demo reports are owned by the
+seeded scout accounts. Edit/delete controls require the API's `can_manage` flag;
+the mutation route independently checks the signed session against the report
+owner under a row lock, and constrains the SQL write to that owner.
+
+Database roles enforce table/column permissions. Application sessions enforce
+per-user ownership because scouts share one backend database account. The scout
+database account cannot directly update/delete reports; the report mutation API
+uses the admin pool only after checking report ownership. The authentication
+account can only read the login-related user columns.
+
+## Custom teams
+
+The **Create your team** workspace is available to scouts and administrators.
+All team endpoints require a session; saved teams belong to the current user.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/teams` | List your saved teams with players and slot indexes |
+| POST | `/api/teams` | Create a personal team |
+| PUT | `/api/teams/:id` | Replace your team's name, formation and lineup atomically |
+| DELETE | `/api/teams/:id` | Delete your team and its lineup |
+| GET | `/api/teams/players?name=&position=` | Search player names and filter natural positions; up to 50 matches |
+
+Create/update accepts `{ "team_name": "My XI", "formation": "4-3-3", "players": [{ "player_id": 1, "slot_index": 0 }] }`.
+Supported formations: 4-3-3, 4-4-2, 4-2-3-1, 3-5-2, 3-4-3, 5-3-2.
+Slots 0–10 are starters (goalkeeper first, then defensive through attacking rows,
+left to right); slots 11–17 are substitutes. Partial and empty lineups may be saved.
+Repeated players or slots are rejected with 400. Missing or other users' teams
+return 404 for updates/deletes. Failed lineup writes roll back the entire update.
+
+Existing installations: run `npm run db:migrate`, then
+`npx tsx src/scripts/provision-team-access.ts` to grant only the new tables to the
+existing scout role. New installations use the regular provisioning workflow.
+Run `npx tsx src/scripts/test-teams.ts` against the development server (default
+`http://localhost:3000`, override with `TEST_BASE_URL`) to verify the feature.
+
 ## Similarity engine choice and Qdrant CRUD
 
 `GET /api/players/:id/similar?engine=qdrant|sql&samePosition=true&limit=5`
