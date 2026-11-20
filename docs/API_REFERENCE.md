@@ -57,6 +57,16 @@ Run `npx tsx src/scripts/test-teams.ts` against the development server (default
 
 ## Similarity engine choice and Qdrant CRUD
 
+Qdrant mode returns exactly two distinct other players, tagged `match_type`:
+`closest` (highest cosine similarity) and `most_different` (lowest cosine
+similarity among the remaining players). Both use exact Qdrant queries, excluding
+the target; the second query uses the negated target vector and excludes the
+closest result. Its score is inverted back before displaying similarity.
+`samePosition=true` applies to both results. Qdrant mode ignores the requested
+result count and returns 422 when fewer than two other eligible points exist.
+"Most different" is relative to the available index, not a guarantee of a
+completely opposite style. SQL mode retains its existing ranked-list behavior.
+
 `GET /api/players/:id/similar?engine=qdrant|sql&samePosition=true&limit=5`
 supports two explicit engines (default: `qdrant`). Qdrant searches indexed
 vectors. SQL mode reads aggregated current-season statistics from MySQL and

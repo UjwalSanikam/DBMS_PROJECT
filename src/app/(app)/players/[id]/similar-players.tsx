@@ -9,6 +9,7 @@ interface SimilarPlayer {
   player_name: string;
   primary_position: string;
   similarity_percent: number;
+  match_type?: "closest" | "most_different";
 }
 
 export default function SimilarPlayers({ playerId, isAdmin = false }: { playerId: number; isAdmin?: boolean }) {
@@ -86,7 +87,8 @@ export default function SimilarPlayers({ playerId, isAdmin = false }: { playerId
           <input
             type="checkbox"
             checked={samePosition}
-            onChange={(e) => setSamePosition(e.target.checked)}
+            disabled={loading}
+            onChange={(e) => {setSamePosition(e.target.checked); setResults(null);}}
           />
           Same position only
         </label>
@@ -95,10 +97,10 @@ export default function SimilarPlayers({ playerId, isAdmin = false }: { playerId
           disabled={loading}
           className="rounded-md bg-accent px-3 py-1.5 text-xs font-semibold text-pitch-950 transition hover:opacity-90 disabled:opacity-50"
         >
-          {loading ? "Searching…" : "Find Similar Players"}
+          {loading ? "Searching…" : engine === "qdrant" ? "Find closest & most different" : "Find Similar Players"}
         </button>
       </div>
-      <p className="mt-2 text-xs text-text-muted">{engine === "sql" ? "Reads live MySQL statistics and compares normalized profiles on the server. Works without Qdrant." : "Searches the stored Qdrant index using cosine similarity."}</p>
+      <p className="mt-2 text-xs text-text-muted">{engine === "sql" ? "Reads live MySQL statistics and compares normalized profiles on the server. Works without Qdrant." : "Returns two players: the closest match and the most different available playing style, based on cosine similarity. Same position only restricts both choices. These are relative to the indexed players; a complete opposite may not exist."}</p>
 
       {error && (
         <p role="alert" className="mt-3 text-sm text-danger">
@@ -136,6 +138,7 @@ export default function SimilarPlayers({ playerId, isAdmin = false }: { playerId
               className="flex items-center gap-3 border-b border-border-soft pb-2 last:border-0"
             >
               <PlayerAvatar playerId={p.player_id} className="w-9" />
+              {p.match_type && <span className={`rounded-md px-2 py-1 text-xs font-semibold ${p.match_type === "closest" ? "bg-accent/10 text-accent" : "bg-warning/10 text-warning"}`}>{p.match_type === "closest" ? "Closest match" : "Most different"}</span>}
               <Link
                 href={`/players/${p.player_id}`}
                 className="min-w-0 flex-1 truncate text-sm font-medium text-text-primary hover:text-accent"
@@ -143,7 +146,7 @@ export default function SimilarPlayers({ playerId, isAdmin = false }: { playerId
                 {p.player_name}
               </Link>
               <span className="text-xs text-text-muted">
-                {p.primary_position} · {p.similarity_percent}%
+                {p.primary_position} · {p.similarity_percent}% similar
               </span>
             </li>
           ))}

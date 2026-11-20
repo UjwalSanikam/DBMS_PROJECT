@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/session";
 import { findSqlSimilar } from "@/lib/sql-similarity";
+import { findStylePair } from "@/lib/qdrant-style-pair";
 import { getQdrantClient, PLAYER_PROFILES_COLLECTION } from "@/lib/qdrant";
 
 interface SimilarPlayerResult {
@@ -63,28 +64,14 @@ export async function GET(
     );
   }
 
-  // Step 2: query for nearest neighbors, excluding the player themself.
-  const filter = samePositionOnly
-    ? {
-        must: [
-          {
-            key: "primary_position",
-            match: { value: (target.payload as { primary_position: string }).primary_position },
-          },
-        ],
-      }
-    : undefined;
-
-  const searchResult = await client.query(PLAYER_PROFILES_COLLECTION, {
-    query: target.vector as number[],
-    limit: limit + 1, // +1 since the target itself may come back as the top match
-    filter,
-    with_payload: true,
-  });
-
-  const similar: SimilarPlayerResult[] = searchResult.points
-    .filter((p) => p.id !== playerId)
-    .slice(0, limit)
+  const vector = target.vector;
+  if (!Array.isArray(vector) || !vector.length || vector.some(v => typeof v !== "number" || !Number.isFinite(v)) || !vector.some(v => v !== 0)) {
+    return NextResponse.json({error: "Player has no usable playing-style vector. Refresh the index."}, {status: 422});
+  }
+  const pair = await findStylePair(client, playerId, vector as number[], samePositionOnly
+    ? (target.payload as {primary_position: string}).primary_position : undefined);
+  if (!pair) return NextResponse.json({error: "At least two other indexed players are needed. Turn off Same position only or add more player vectors."}, {status: 422});
+  const similar: SimilarPlayerResult[] = pair
     .map((p) => {
       const payload = p.payload as {
         player_id: number;
@@ -104,10 +91,11 @@ export async function GET(
         season: payload.season,
         club_id: payload.club_id,
         similarity_percent: similarityPercent,
+        match_type: p.match_type,
       };
     });
 
-  return NextResponse.json({ similar });
+  return NextResponse.json({ similar, engine: "qdrant" });
   } catch {
     return NextResponse.json({error: "Selected search service is unavailable. Check MySQL, or start Qdrant and refresh its index."}, {status: 503});
   }
