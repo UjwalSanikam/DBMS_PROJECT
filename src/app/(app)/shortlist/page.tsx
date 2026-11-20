@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import ShortlistAdder from "@/components/shortlist-adder";
 
 interface ShortlistEntry {
   shortlist_id: number;
@@ -98,6 +99,7 @@ export default function ShortlistPage() {
         Players you&apos;re tracking for recruitment.
       </p>
 
+      <ShortlistAdder onSaved={fetchShortlist} />
       <div className="mt-6 flex gap-3">
         <select
           value={statusFilter}

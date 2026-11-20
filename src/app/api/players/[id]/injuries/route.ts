@@ -1,3 +1,4 @@
+import { injuryInput } from '@/lib/history-input';
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import type { ResultSetHeader } from "mysql2";
@@ -67,7 +68,9 @@ export async function POST(
     return NextResponse.json({ error: "Invalid player id." }, { status: 400 });
   }
 
-  const body = await request.json().catch(() => null);
+  const parsed = injuryInput.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+  const body = parsed.data;
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return NextResponse.json({ error: "Expected a JSON object." }, { status: 400 });
   }

@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { savePlayer } from "@/lib/player-write";
+
+export async function POST(request: NextRequest) { return savePlayer(request); }
 import { query } from "@/lib/db";
 import { requireSession } from "@/lib/session";
 

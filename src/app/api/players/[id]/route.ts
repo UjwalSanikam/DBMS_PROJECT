@@ -1,4 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { savePlayer, removePlayer } from "@/lib/player-write";
+
+export async function PATCH(request: NextRequest, {params}: {params: Promise<{id: string}>}) {
+  return savePlayer(request, Number((await params).id));
+}
+export async function DELETE(_request: NextRequest, {params}: {params: Promise<{id: string}>}) {
+  return removePlayer(Number((await params).id));
+}
 import { query } from "@/lib/db";
 import { requireSession } from "@/lib/session";
 

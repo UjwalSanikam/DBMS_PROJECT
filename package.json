@@ -18,6 +18,7 @@
     "setup:local": "tsx src/scripts/setup-local.ts",
     "services:start": "tsx src/scripts/setup-local.ts --services-only",
     "test:integration": "tsx src/scripts/test-integration.ts",
+    "test:crud": "tsx src/scripts/test-crud.ts",
     "qdrant:start": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-qdrant.ps1"
   },
   "dependencies": {

@@ -1,6 +1,9 @@
 import PlayersTable from "./players-table";
+import { CreatePlayer } from "@/components/player-management";
+import { requireSession } from "@/lib/session";
 
-export default function PlayersPage() {
+export default async function PlayersPage() {
+  const session = await requireSession();
   return (
     <div>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -21,6 +24,7 @@ export default function PlayersPage() {
         </div>
       </div>
 
+      {session.role === "ADMIN" && <CreatePlayer />}
       <div className="mt-7">
         <PlayersTable />
       </div>

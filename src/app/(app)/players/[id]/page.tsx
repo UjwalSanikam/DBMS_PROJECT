@@ -3,6 +3,8 @@ import { getFullPlayerDetail } from "@/lib/player-detail";
 import PlayerAvatar from "@/components/player-avatar";
 import SimilarPlayers from "./similar-players";
 import { requireSession } from "@/lib/session";
+import PlayerManagement, {type ClubOption} from "@/components/player-management";
+import {query} from "@/lib/db";
 
 function calculateAge(dob: string): number {
   const d = new Date(dob);
@@ -42,6 +44,7 @@ export default async function PlayerDetailPage({
 
   const detail = await getFullPlayerDetail(playerId);
   if (!detail) notFound();
+  const clubs = session.role === "ADMIN" ? await query<ClubOption[]>(`SELECT club_id,club_name FROM club ORDER BY club_name`) : [];
 
   const { player, latestSeasonStats, injuries, transfers, valuations, reports } =
     detail;
@@ -87,6 +90,7 @@ export default async function PlayerDetailPage({
       </div>
 
 
+      <PlayerManagement player={player} clubs={clubs} isAdmin={session.role === "ADMIN"} />
       {/* Overview + Fitness */}
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="rounded-lg border border-border-soft bg-surface p-5">

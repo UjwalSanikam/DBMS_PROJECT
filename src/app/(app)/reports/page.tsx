@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import ReportActions from "@/components/report-actions";
 
 interface MyReport {
   report_id: number;
@@ -318,6 +319,13 @@ export default function ReportsPage() {
               {r.weaknesses && (
                 <p className="text-xs text-text-muted">Weaknesses: {r.weaknesses}</p>
               )}
+              {r.tactical_fit && (
+                <p className="mt-2 text-xs text-text-muted">Tactical fit: {r.tactical_fit}</p>
+              )}
+              {r.notes && (
+                <p className="mt-2 text-xs text-text-muted">Notes: {r.notes}</p>
+              )}
+              <ReportActions report={r} onSaved={fetchReports} />
             </div>
           ))}
       </div>

@@ -76,6 +76,19 @@ Similarity parameters: `samePosition=true|false` and `limit`.
 | PATCH | `/api/shortlist/[id]` | Owner or ADMIN | Change priority, status, or reason |
 | DELETE | `/api/shortlist/[id]` | Owner or ADMIN | Remove a shortlist entry |
 
+## Frontend management additions
+
+| Method | Endpoint | Access | Purpose |
+| --- | --- | --- | --- |
+| POST | `/api/players` | ADMIN | Create a player profile |
+| PATCH | `/api/players/[id]` | ADMIN | Save the complete editable identity profile |
+| DELETE | `/api/players/[id]` | ADMIN | Delete a player and dependent records; attempt Qdrant cleanup |
+| GET | `/api/clubs` | Authenticated | List club IDs and names |
+| PATCH | `/api/reports/[id]` | Owner or ADMIN | Save report fields; atomically synchronize positive recommendations to the shortlist |
+| DELETE | `/api/reports/[id]` | Owner or ADMIN | Delete a report, retaining any existing shortlist entry |
+
+Player identity writes validate names, calendar dates, positions, preferred foot and optional height. History writes validate dates, numeric amounts and allowed enum values. See [CRUD_DEMO.md](CRUD_DEMO.md) for the frontend walkthrough.
+
 ## Security notes
 
 - Request examples must never contain real passwords or secrets in submitted documentation.
