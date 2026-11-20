@@ -56,3 +56,25 @@ export function deletePlayerVector(playerId: number) {
     await getQdrantClient().delete(PLAYER_PROFILES_COLLECTION, {wait: true, points: [playerId]});
   });
 }
+
+// Recompute with the same population normalization as the full index rebuild.
+export function savePlayerVector(playerId: number, create: boolean) {
+  return serialize(async () => {
+    await ensurePlayerProfilesCollection();
+    const client = getQdrantClient();
+    const existing = await client.retrieve(PLAYER_PROFILES_COLLECTION, {ids: [playerId]});
+    if (create && existing.length) return {error: "Vector already exists. Use Update.", status: 409};
+    if (!create && !existing.length) return {error: "Vector not found. Use Create.", status: 404};
+    const raw = await buildRawFeatureVectors(VECTOR_SEASON);
+    const vector = normalizeFeatureVectors(raw).get(playerId);
+    if (!vector) return {error: "Player needs at least 450 minutes of current-season statistics.", status: 422};
+    const rows = await query<Array<{player_id: number; player_name: string; primary_position: string; club_id: number | null}>>(
+      `SELECT p.player_id, CONCAT(p.first_name, ' ', p.last_name) AS player_name, p.primary_position,
+       (SELECT pc.club_id FROM player_club pc WHERE pc.player_id=p.player_id AND pc.is_current=TRUE
+        ORDER BY pc.start_date DESC, pc.player_club_id DESC LIMIT 1) AS club_id
+       FROM player p WHERE p.player_id=?`, [playerId]);
+    if (!rows.length) return {error: "Player not found.", status: 404};
+    await client.upsert(PLAYER_PROFILES_COLLECTION, {wait: true, points: [{id: playerId, vector, payload: {...rows[0], season: VECTOR_SEASON}}]});
+    return {saved: playerId, status: create ? 201 : 200};
+  });
+}

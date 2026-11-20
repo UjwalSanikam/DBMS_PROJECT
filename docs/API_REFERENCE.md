@@ -1,5 +1,31 @@
 # API Reference
 
+## Similarity engine choice and Qdrant CRUD
+
+`GET /api/players/:id/similar?engine=qdrant|sql&samePosition=true&limit=5`
+supports two explicit engines (default: `qdrant`). Qdrant searches indexed
+vectors. SQL mode reads aggregated current-season statistics from MySQL and
+performs exact cosine comparison in the Next.js server; it does not require
+Qdrant. Both use ten z-score-normalized features and a 450-minute threshold.
+Scores are rescaled cosine values, not probabilities. SQL mode sees current
+statistics; Qdrant sees its most recent index update.
+
+Per-player Qdrant endpoints at `/api/players/:id/vector`:
+
+| Method | Access | Operation |
+| --- | --- | --- |
+| GET | Signed-in user | Read stored vector and payload; 404 if absent |
+| POST | ADMIN | Create from current MySQL statistics; 409 if already present |
+| PUT | ADMIN | Replace vector and metadata from current MySQL statistics; 404 if absent |
+| DELETE | ADMIN | Delete the Qdrant point, preserving the SQL player |
+
+Create/update return 422 for players without eligible statistics. These controls
+appear under **Similar players → Qdrant vectors** on the player detail page.
+A full index refresh can recreate deleted eligible points. Use a full refresh
+after changing population statistics so every stored point shares the same
+normalization. These operations manage derived player profiles, not relational
+contracts, injuries, or reports.
+
 All endpoints return JSON. Except for login, logout, and current-session lookup,
 application endpoints require a valid ScoutIQ session cookie. Write operations
 return `400` for invalid input, `401` for missing authentication, `403` for an

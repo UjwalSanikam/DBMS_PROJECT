@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/session";
+import { findSqlSimilar } from "@/lib/sql-similarity";
 import { getQdrantClient, PLAYER_PROFILES_COLLECTION } from "@/lib/qdrant";
 
 interface SimilarPlayerResult {
@@ -35,6 +36,13 @@ export async function GET(
   }
 
   try {
+  const engine = searchParams.get("engine") ?? "qdrant";
+  if (engine !== "sql" && engine !== "qdrant") return NextResponse.json({error: "Choose sql or qdrant."}, {status: 400});
+  if (engine === "sql") {
+    const similar = await findSqlSimilar(playerId, samePositionOnly, limit);
+    if (similar === null) return NextResponse.json({error: "Player needs at least 450 minutes of current-season statistics."}, {status: 404});
+    return NextResponse.json({similar, engine});
+  }
   const client = getQdrantClient();
 
   // Step 1: fetch the target player's stored vector + payload.
@@ -101,6 +109,6 @@ export async function GET(
 
   return NextResponse.json({ similar });
   } catch {
-    return NextResponse.json({error: "Similarity search is unavailable. Ask an administrator to start Qdrant and refresh the index."}, {status: 503});
+    return NextResponse.json({error: "Selected search service is unavailable. Check MySQL, or start Qdrant and refresh its index."}, {status: 503});
   }
 }

@@ -17,6 +17,21 @@ export default function SimilarPlayers({ playerId, isAdmin = false }: { playerId
   const [error, setError] = useState<string | null>(null);
   const [samePosition, setSamePosition] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [engine, setEngine] = useState("qdrant");
+  const [point, setPoint] = useState<unknown>(null);
+
+  async function vectorAction(method: "GET" | "POST" | "PUT" | "DELETE") {
+    if (method === "DELETE" && !window.confirm("Delete this player's Qdrant vector? The MySQL player record will remain. You can recreate the vector.")) return;
+    setLoading(true); setError(null); setNotice(null); setPoint(null); setResults(null);
+    try {
+      const response = await fetch(`/api/players/${playerId}/vector`, {method});
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error ?? "Qdrant operation failed.");
+      if (method === "GET") setPoint(data.point);
+      setNotice(method === "GET" ? "Stored Qdrant vector loaded." : method === "DELETE" ? "Qdrant vector deleted. MySQL record is unchanged." : "Qdrant vector saved from current MySQL statistics.");
+    } catch (err) { setError(err instanceof Error ? err.message : "Qdrant operation failed."); }
+    finally { setLoading(false); }
+  }
 
   async function manageIndex(remove: boolean) {
     setLoading(true); setError(null); setNotice(null); setResults(null);
@@ -32,8 +47,10 @@ export default function SimilarPlayers({ playerId, isAdmin = false }: { playerId
   async function handleFindSimilar() {
     setLoading(true);
     setError(null);
+    setResults(null); setNotice(null);
     try {
       const params = new URLSearchParams();
+      params.set("engine", engine);
       if (samePosition) params.set("samePosition", "true");
       const res = await fetch(`/api/players/${playerId}/similar?${params.toString()}`);
       const data = await res.json();
@@ -58,7 +75,13 @@ export default function SimilarPlayers({ playerId, isAdmin = false }: { playerId
         statistical playing-profile similarity.
       </p>
 
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <label className="text-xs text-text-muted">Search using
+          <select aria-label="Similarity search engine" disabled={loading} value={engine} onChange={e => {setEngine(e.target.value); setResults(null); setError(null); setNotice(null);}} className="ml-2 rounded-md border border-border-soft bg-surface px-3 py-2 text-text-primary">
+            <option value="qdrant">Qdrant vectors</option>
+            <option value="sql">MySQL live statistics</option>
+          </select>
+        </label>
         <label className="flex items-center gap-1.5 text-xs text-text-muted">
           <input
             type="checkbox"
@@ -75,6 +98,7 @@ export default function SimilarPlayers({ playerId, isAdmin = false }: { playerId
           {loading ? "Searching…" : "Find Similar Players"}
         </button>
       </div>
+      <p className="mt-2 text-xs text-text-muted">{engine === "sql" ? "Reads live MySQL statistics and compares normalized profiles on the server. Works without Qdrant." : "Searches the stored Qdrant index using cosine similarity."}</p>
 
       {error && (
         <p role="alert" className="mt-3 text-sm text-danger">
@@ -82,9 +106,21 @@ export default function SimilarPlayers({ playerId, isAdmin = false }: { playerId
         </p>
       )}
       {notice && <p role="status" className="mt-3 text-sm text-accent">{notice}</p>}
-      {isAdmin && <div className="mt-3 flex flex-wrap gap-3">
+      {engine === "qdrant" && <div className="mt-4 rounded-xl border border-border-soft p-4">
+        <h3 className="text-sm font-semibold">Qdrant player vector</h3>
+        <p className="mt-1 text-xs text-text-muted">Create and update derive the vector and metadata from MySQL. Delete removes only the Qdrant point. A full refresh recreates eligible vectors.</p>
+        <div className="mt-3 flex flex-wrap gap-3">
+          <button disabled={loading} onClick={() => vectorAction("GET")} className="text-xs text-accent disabled:opacity-50">View vector (Read)</button>
+          {isAdmin && <>
+            <button disabled={loading} onClick={() => vectorAction("POST")} className="text-xs text-accent disabled:opacity-50">Create vector</button>
+            <button disabled={loading} onClick={() => vectorAction("PUT")} className="text-xs text-accent disabled:opacity-50">Update from statistics</button>
+            <button disabled={loading} onClick={() => vectorAction("DELETE")} className="text-xs text-danger disabled:opacity-50">Delete vector</button>
+          </>}
+        </div>
+        {point !== null && <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-all text-xs">{JSON.stringify(point, null, 2)}</pre>}
+      </div>}
+      {isAdmin && engine === "qdrant" && <div className="mt-3 flex flex-wrap gap-3">
         <button onClick={() => manageIndex(false)} disabled={loading} className="text-xs text-accent disabled:opacity-50">Refresh similarity index</button>
-        <button onClick={() => manageIndex(true)} disabled={loading} className="text-xs text-danger disabled:opacity-50">Remove player from similarity search</button>
       </div>}
 
       {results && (
